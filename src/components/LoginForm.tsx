@@ -4,12 +4,13 @@ import { useAuth } from "../context/AuthContext";
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, signup } = useAuth(); // Make sure signup is implemented in your context
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,10 +18,15 @@ const LoginForm = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
-      navigate("/dashboard"); // or wherever your admin panel lives
+      if (isSigningUp) {
+        await signup(email, password);
+      } else {
+        await login(email, password);
+      }
+      navigate("/dashboard");
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "An error occurred");
+    } finally {
       setLoading(false);
     }
   };
@@ -31,7 +37,7 @@ const LoginForm = () => {
       className="max-w-md mx-auto bg-white dark:bg-[#0a192f] p-6 rounded shadow-md"
     >
       <h2 className="text-2xl font-bold mb-6 text-center text-[#007acc] dark:text-[#64ffda]">
-        Admin Login
+        {isSigningUp ? "Create Admin Account" : "Admin Login"}
       </h2>
 
       {error && (
@@ -71,8 +77,25 @@ const LoginForm = () => {
         disabled={loading}
         className="w-full bg-[#64ffda] text-[#0a192f] font-semibold py-2 px-4 rounded hover:opacity-90 transition"
       >
-        {loading ? "Signing in..." : "Sign In"}
+        {loading
+          ? isSigningUp
+            ? "Creating account..."
+            : "Signing in..."
+          : isSigningUp
+          ? "Sign Up"
+          : "Sign In"}
       </button>
+
+      <p className="text-center mt-4 text-sm">
+        {isSigningUp ? "Already have an account?" : "Need to create an account?"}{" "}
+        <button
+          type="button"
+          onClick={() => setIsSigningUp(!isSigningUp)}
+          className="text-[#64ffda] underline ml-1"
+        >
+          {isSigningUp ? "Sign In" : "Sign Up"}
+        </button>
+      </p>
     </form>
   );
 };
