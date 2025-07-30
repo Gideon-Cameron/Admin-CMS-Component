@@ -1,15 +1,18 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import LoginForm from "./components/LoginForm";
-import Home from "./pages/Home"; // 👈 now all content is inside this
+import Home from "./pages/Home";
 
 const App = () => {
   const { user, loading } = useAuth();
 
+  console.log("🧠 App.tsx user:", user);
+  console.log("⏳ App.tsx loading:", loading);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen text-[#64ffda]">
-        Loading...
+        Loading auth...
       </div>
     );
   }
