@@ -30,22 +30,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log("👤 Auth state changed:", firebaseUser);
       setUser(firebaseUser);
       setLoading(false);
     });
+
     return () => unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    try {
+      console.log("🔑 Attempting login...");
+      await signInWithEmailAndPassword(auth, email, password);
+      console.log("✅ Login successful");
+    } catch (error) {
+      console.error("❌ Login failed:", error);
+      throw error;
+    }
   };
 
   const signup = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+    try {
+      console.log("✍️ Attempting signup...");
+      await createUserWithEmailAndPassword(auth, email, password);
+      console.log("✅ Signup successful");
+    } catch (error) {
+      console.error("❌ Signup failed:", error);
+      throw error;
+    }
   };
 
   const logout = async () => {
-    await signOut(auth);
+    try {
+      console.log("🚪 Logging out...");
+      await signOut(auth);
+      console.log("✅ Logged out");
+    } catch (error) {
+      console.error("❌ Logout failed:", error);
+      throw error;
+    }
   };
 
   return (
