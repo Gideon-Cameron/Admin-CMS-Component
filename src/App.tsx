@@ -1,50 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import LoginForm from "./components/LoginForm";
-import Hero from "./components/Hero";
-// import About from "./components/About";
-// import Experience from "./components/Experience";
-// import Skills from "./components/Skills";
-// import Projects from "./components/Projects";
-import Contact from "./components/Contact";
-import Footer from "./components/Footer";
-import Testimonial from "./components/Testimonial";
-
 import { useAuth } from "./context/AuthContext";
-
-const AdminRoutes = () => (
-  <>
-    <main className="pt-10 space-y-22 px-6 nav:pl-20 md:px-12">
-      <section id="hero">
-        <Hero />
-      </section>
-
-      {/* <section id="about">
-        <About />
-      </section>
-
-      <section id="experience">
-        <Experience />
-      </section>
-
-      <section id="skills">
-        <Skills />
-      </section>
-
-      <section id="projects">
-        <Projects />
-      </section> */}
-
-      <section id="testimonials">
-        <Testimonial />
-      </section>
-
-      <section id="contact">
-        <Contact />
-      </section>
-    </main>
-    <Footer />
-  </>
-);
+import LoginForm from "./components/LoginForm";
+import Home from "./pages/Home"; // 👈 now all content is inside this
 
 const App = () => {
   const { user, loading } = useAuth();
@@ -67,7 +24,7 @@ const App = () => {
           />
           <Route
             path="/admin"
-            element={user ? <AdminRoutes /> : <Navigate to="/login" replace />}
+            element={user ? <Home /> : <Navigate to="/login" replace />}
           />
           <Route
             path="*"
