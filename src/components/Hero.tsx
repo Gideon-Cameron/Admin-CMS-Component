@@ -1,50 +1,133 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
-type HeroProps = {
-  intro: string;
-  name: string;
-  subtitle: string;
-  description: string;
-};
+const Hero = () => {
+  const [intro, setIntro] = useState("");
+  const [name, setName] = useState("");
+  const [subtitle, setSubtitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
-const Hero = ({ intro, name, subtitle, description }: HeroProps) => {
+  const heroRef = doc(db, "content", "hero");
+
+  useEffect(() => {
+    const fetchHero = async () => {
+      setLoading(true);
+      try {
+        const snap = await getDoc(heroRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          setIntro(data.intro || "");
+          setName(data.name || "");
+          setSubtitle(data.subtitle || "");
+          setDescription(data.description || "");
+        }
+      } catch (error) {
+        console.error("Failed to fetch hero content", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHero();
+  });
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await setDoc(heroRef, { intro, name, subtitle, description });
+      setMessage("Saved successfully!");
+    } catch (error) {
+      console.error("Failed to save", error);
+      setMessage("Error saving. See console.");
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMessage(""), 3000);
+    }
+  };
+
   return (
-    <section className="min-h-screen flex flex-col justify-center px-6 md:px-12 max-w-4xl mx-auto">
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.6 }}
-        className="text-[#007acc] dark:text-[#64ffda] text-sm md:text-base font-mono mb-4"
-      >
-        {intro}
-      </motion.p>
+    <section className="min-h-screen flex flex-col justify-center px-6 md:px-12 max-w-4xl mx-auto space-y-4">
+      {loading ? (
+        <p className="text-center text-[#8892b0]">Loading hero content...</p>
+      ) : (
+        <>
+          <motion.label
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="text-sm font-mono text-[#64ffda]"
+          >
+            Intro Text
+            <input
+              type="text"
+              value={intro}
+              onChange={(e) => setIntro(e.target.value)}
+              className="w-full mt-1 mb-4 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+            />
+          </motion.label>
 
-      <motion.h1
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35, duration: 0.6 }}
-        className="text-5xl sm:text-6xl md:text-7xl font-bold text-[#0f172a] dark:text-[#ccd6f6] mb-2 leading-tight"
-      >
-        {name}
-      </motion.h1>
+          <motion.label
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-xl font-semibold text-[#ccd6f6]"
+          >
+            Name
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full mt-1 mb-4 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+            />
+          </motion.label>
 
-      <motion.h2
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.6 }}
-        className="text-4xl sm:text-5xl md:text-6xl font-semibold text-[#475569] dark:text-[#8892b0] mb-6 leading-tight"
-      >
-        {subtitle}
-      </motion.h2>
+          <motion.label
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-lg font-semibold text-[#8892b0]"
+          >
+            Subtitle
+            <input
+              type="text"
+              value={subtitle}
+              onChange={(e) => setSubtitle(e.target.value)}
+              className="w-full mt-1 mb-4 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+            />
+          </motion.label>
 
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.65, duration: 0.6 }}
-        className="text-base sm:text-lg md:text-xl leading-relaxed text-[#0f172a] dark:text-[#8892b0] max-w-2xl"
-      >
-        {description}
-      </motion.p>
+          <motion.label
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-base text-[#8892b0]"
+          >
+            Description
+            <textarea
+              rows={5}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+            />
+          </motion.label>
+
+          <div className="mt-4 flex gap-4 items-center">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-5 py-2 rounded bg-[#64ffda] text-[#0a192f] font-semibold hover:bg-[#52d0c5] transition"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+            {message && <span className="text-sm text-green-400">{message}</span>}
+          </div>
+        </>
+      )}
     </section>
   );
 };
