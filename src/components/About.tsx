@@ -1,84 +1,143 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db, storage } from "../lib/firebase";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
-type AboutProps = {
-  sectionId?: string;
-  title: string;
-  paragraphs: string[];
-  imageUrl: string;
-  imageAlt?: string;
-};
+const About = () => {
+  const [title, setTitle] = useState("");
+  const [paragraphs, setParagraphs] = useState([""]);
+  const [imageUrl, setImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
-const About = ({
-  sectionId = "about",
-  title,
-  paragraphs,
-  imageUrl,
-  imageAlt = "Profile image",
-}: AboutProps) => {
+  const aboutRef = doc(db, "content", "about");
+
+  useEffect(() => {
+    const fetchAbout = async () => {
+      try {
+        const snap = await getDoc(aboutRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          setTitle(data.title || "");
+          setParagraphs(data.paragraphs || [""]);
+          setImageUrl(data.imageUrl || "");
+        }
+      } catch (err) {
+        console.error("❌ Failed to fetch about content:", err);
+      }
+    };
+
+    fetchAbout();
+  });
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+
+    const imageRef = ref(storage, `about/${file.name}`);
+    setUploading(true);
+    try {
+      await uploadBytes(imageRef, file);
+      const url = await getDownloadURL(imageRef);
+      setImageUrl(url);
+      setMessage("Image uploaded!");
+    } catch (err) {
+      console.error("❌ Image upload failed:", err);
+      setMessage("Upload failed");
+    } finally {
+      setUploading(false);
+      setTimeout(() => setMessage(""), 3000);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await setDoc(aboutRef, { title, paragraphs, imageUrl });
+      setMessage("Saved successfully!");
+    } catch (err) {
+      console.error("❌ Failed to save about data:", err);
+      setMessage("Save failed");
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMessage(""), 3000);
+    }
+  };
+
   return (
-    <section
-      id={sectionId}
-      className="max-w-5xl mx-auto px-6 md:px-12 py-20 md:py-24 flex flex-col md:flex-row gap-12 items-center"
-    >
-      {/* LEFT - TEXT */}
-      <motion.div
-        className="md:w-3/5"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        transition={{ staggerChildren: 0.15 }}
-        variants={{
-          visible: { transition: { staggerChildren: 0.15 } },
-          hidden: {},
-        }}
-      >
-        {/* SECTION HEADING */}
-        <motion.div
-          className="flex items-center mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.6 }}
-        >
-          <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono whitespace-nowrap">
-            <span className="mr-2 font-mono text-[#007acc] dark:text-[#64ffda]">01.</span>
-            {title}
+    <section className="max-w-5xl mx-auto px-6 md:px-12 py-20 md:py-24 flex flex-col md:flex-row gap-12 items-center">
+      {/* TEXT SIDE */}
+      <motion.div className="md:w-3/5">
+        <motion.div className="flex items-center mb-8">
+          <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono">
+            <span className="mr-2">01.</span>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="bg-transparent border-b border-[#64ffda] outline-none text-[#64ffda] font-bold text-lg"
+            />
           </h2>
-          <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#233554] relative -top-[0px]" />
+          <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#233554]" />
         </motion.div>
 
-        <div className="space-y-4 text-[#4b5563] dark:text-[#8892b0] text-base leading-relaxed">
-          {paragraphs.map((text, index) => (
-            <motion.p
-              key={index}
-              className="mb-2"
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + index * 0.15, duration: 0.5 }}
-              viewport={{ once: true }}
-            >
-              {text}
-            </motion.p>
+        <div className="space-y-4 text-[#4b5563] dark:text-[#8892b0]">
+          {paragraphs.map((text, i) => (
+            <textarea
+              key={i}
+              value={text}
+              onChange={(e) =>
+                setParagraphs((prev) =>
+                  prev.map((p, index) => (index === i ? e.target.value : p))
+                )
+              }
+              rows={3}
+              className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+            />
           ))}
+          <button
+            onClick={() => setParagraphs([...paragraphs, ""])}
+            className="text-sm text-[#64ffda] hover:underline"
+          >
+            + Add Paragraph
+          </button>
         </div>
       </motion.div>
 
-      {/* RIGHT - IMAGE */}
-      <motion.div
-        className="md:w-2/5 flex justify-center"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7, duration: 0.6 }}
-        viewport={{ once: true }}
-      >
-        <div className="relative group w-64 h-64 rounded-md overflow-hidden shadow-lg">
-          <img
-            src={imageUrl}
-            alt={imageAlt}
-            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition duration-500 rounded"
-          />
+      {/* IMAGE SIDE */}
+      <motion.div className="md:w-2/5 flex flex-col items-center gap-4">
+        <div className="relative w-64 h-64 rounded overflow-hidden shadow-lg">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt="Profile"
+              className="w-full h-full object-cover grayscale hover:grayscale-0 transition duration-500"
+            />
+          ) : (
+            <p className="text-sm text-center text-[#8892b0]">No image uploaded</p>
+          )}
           <div className="absolute inset-0 border-2 border-[#64ffda] rounded pointer-events-none" />
         </div>
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => e.target.files && handleImageUpload(e.target.files[0])}
+        />
       </motion.div>
+
+      {/* Save Button */}
+      <div className="w-full mt-6 flex gap-4 items-center justify-center md:justify-start">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-6 py-2 rounded bg-[#64ffda] text-[#0a192f] font-semibold hover:bg-[#52d0c5] transition"
+        >
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+        {uploading && <span className="text-sm text-yellow-400">Uploading image...</span>}
+        {message && <span className="text-sm text-green-400">{message}</span>}
+      </div>
     </section>
   );
 };
