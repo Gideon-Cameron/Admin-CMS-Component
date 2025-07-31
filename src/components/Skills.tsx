@@ -6,12 +6,8 @@ import { db } from "../lib/firebase";
 type SkillGroups = Record<string, string[]>;
 
 const Skills = () => {
-  const [skillGroups, setSkillGroups] = useState<SkillGroups>({
-    Frontend: [],
-    Backend: [],
-    Tools: [],
-  });
-  const [activeTab, setActiveTab] = useState<string>("Frontend");
+  const [skillGroups, setSkillGroups] = useState<SkillGroups>({});
+  const [activeTab, setActiveTab] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -26,8 +22,8 @@ const Skills = () => {
         if (snap.exists()) {
           const data = snap.data() as SkillGroups;
           setSkillGroups(data);
+          setActiveTab(Object.keys(data)[0] || "");
           console.log("✅ Skill data loaded:", data);
-          setActiveTab(Object.keys(data)[0] || "Frontend");
         } else {
           console.warn("⚠️ Skills document does not exist.");
         }
@@ -72,12 +68,33 @@ const Skills = () => {
   };
 
   const handleCategoryRename = (newName: string) => {
+    if (!newName || newName === activeTab) return;
     setSkillGroups((prev) => {
       const updated = { ...prev };
       const items = updated[activeTab];
       delete updated[activeTab];
       updated[newName] = items;
       setActiveTab(newName);
+      return updated;
+    });
+  };
+
+  const handleAddCategory = () => {
+    const newGroupName = `New Group ${Object.keys(skillGroups).length + 1}`;
+    setSkillGroups((prev) => ({
+      ...prev,
+      [newGroupName]: [""],
+    }));
+    setActiveTab(newGroupName);
+  };
+
+  const handleDeleteCategory = () => {
+    if (!confirm(`Are you sure you want to delete '${activeTab}'?`)) return;
+    setSkillGroups((prev) => {
+      const updated = { ...prev };
+      delete updated[activeTab];
+      const remaining = Object.keys(updated);
+      setActiveTab(remaining[0] || "");
       return updated;
     });
   };
@@ -100,8 +117,8 @@ const Skills = () => {
         <p className="text-center text-[#8892b0]">Loading skills...</p>
       ) : (
         <>
-          {/* Category Buttons */}
-          <div className="flex flex-wrap gap-4 mb-10">
+          {/* Tab Buttons */}
+          <div className="flex flex-wrap gap-4 mb-6">
             {Object.keys(skillGroups).map((category) => (
               <button
                 key={category}
@@ -115,16 +132,32 @@ const Skills = () => {
                 {category}
               </button>
             ))}
+            <button
+              onClick={handleAddCategory}
+              className="text-sm text-[#64ffda] hover:underline"
+            >
+              + Add Group
+            </button>
           </div>
 
-          {/* Rename Category */}
-          <input
-            value={activeTab}
-            onChange={(e) => handleCategoryRename(e.target.value)}
-            className="mb-4 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
-          />
+          {/* Rename/Delete Group */}
+          {activeTab && (
+            <div className="mb-6 flex gap-4 items-center">
+              <input
+                value={activeTab}
+                onChange={(e) => handleCategoryRename(e.target.value)}
+                className="p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+              />
+              <button
+                onClick={handleDeleteCategory}
+                className="text-sm text-red-500 hover:underline"
+              >
+                Delete Group
+              </button>
+            </div>
+          )}
 
-          {/* Skill List */}
+          {/* Skill Inputs */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -134,7 +167,7 @@ const Skills = () => {
               exit="hidden"
               variants={{ visible: { transition: { staggerChildren: 0.07 } }, hidden: {} }}
             >
-              {skillGroups[activeTab].map((skill, idx) => (
+              {skillGroups[activeTab]?.map((skill, idx) => (
                 <motion.input
                   key={idx}
                   value={skill}
@@ -149,7 +182,7 @@ const Skills = () => {
             </motion.div>
           </AnimatePresence>
 
-          {/* Add Skill */}
+          {/* Add Skill Button */}
           <button
             onClick={handleAddSkill}
             className="mt-4 text-sm text-[#64ffda] hover:underline"
@@ -157,7 +190,7 @@ const Skills = () => {
             + Add Skill
           </button>
 
-          {/* Save */}
+          {/* Save Button */}
           <div className="mt-6 flex gap-4 items-center">
             <button
               onClick={handleSave}
