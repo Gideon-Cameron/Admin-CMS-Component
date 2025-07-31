@@ -38,7 +38,7 @@ const Hero = () => {
     };
 
     fetchHero();
-  }); // ← FIX: only run on initial mount
+  }, []); // ← FIX: only run on initial mount
 
   const handleSave = async () => {
     console.log("💾 Saving hero data:", { intro, name, subtitle, description });

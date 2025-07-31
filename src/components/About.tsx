@@ -30,7 +30,7 @@ const About = () => {
     };
 
     fetchAbout();
-  });
+  }, []);
 
   const handleImageUpload = async (file: File) => {
     if (!file) return;
