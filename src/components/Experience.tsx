@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 type ExperienceItem = {
   title: string;
@@ -8,102 +10,178 @@ type ExperienceItem = {
   points: string[];
 };
 
-type ExperienceProps = {
-  sectionTitle: string;
-  experienceData: Record<string, ExperienceItem>;
+type ExperienceKey = "Experience1" | "Experience2" | "Experience3";
+
+type ExperienceMap = {
+  [key in ExperienceKey]: ExperienceItem;
 };
 
-const Experience = ({ sectionTitle, experienceData }: ExperienceProps) => {
-  const tabs = Object.keys(experienceData) as Array<keyof typeof experienceData>;
-  const [activeTab, setActiveTab] = useState<keyof typeof experienceData>(tabs[0]);
+const Experience = () => {
+  const [experiences, setExperiences] = useState<ExperienceMap>({
+    Experience1: { title: "", context: "", date: "", points: [""] },
+    Experience2: { title: "", context: "", date: "", points: [""] },
+    Experience3: { title: "", context: "", date: "", points: [""] },
+  });
+
+  const [activeTab, setActiveTab] = useState<ExperienceKey>("Experience1");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const experienceRef = doc(db, "content", "experience");
+
+  useEffect(() => {
+    const fetchExperience = async () => {
+      setLoading(true);
+      try {
+        const snap = await getDoc(experienceRef);
+        if (snap.exists()) {
+          const data = snap.data() as Partial<ExperienceMap>;
+          setExperiences((prev) => ({ ...prev, ...data }));
+          console.log("✅ Experience data loaded:", data);
+        } else {
+          console.warn("⚠️ Experience document does not exist.");
+        }
+      } catch (err) {
+        console.error("❌ Failed to fetch experience data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchExperience();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await setDoc(experienceRef, experiences);
+      setMessage("Saved successfully!");
+      console.log("💾 Saved experience data:", experiences);
+    } catch (err) {
+      console.error("❌ Failed to save experience data", err);
+      setMessage("Failed to save.");
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMessage(""), 3000);
+    }
+  };
+
+  const handleChange = (field: keyof ExperienceItem, value: string, index?: number) => {
+    setExperiences((prev) => {
+      const updated = { ...prev };
+      if (field === "points" && index !== undefined) {
+        updated[activeTab].points[index] = value;
+      } else {
+        (updated[activeTab][field] as string) = value;
+      }
+      return updated;
+    });
+  };
+
+  const handleAddPoint = () => {
+    setExperiences((prev) => {
+      const updated = { ...prev };
+      updated[activeTab].points.push("");
+      return updated;
+    });
+  };
 
   return (
-    <section id="experience" className="max-w-5xl mx-auto px-6 md:px-12 py-20 md:py-24">
-      {/* Section Heading */}
+    <section className="max-w-5xl mx-auto px-6 md:px-12 py-20 md:py-24">
       <motion.div
         className="flex items-center mb-12"
         initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        viewport={{ once: true }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
       >
         <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono whitespace-nowrap">
-          <span className="mr-2 font-mono text-[#007acc] dark:text-[#64ffda]">02.</span>
-          {sectionTitle}
+          <span className="mr-2">03.</span> Experience
         </h2>
-        <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#8892b0] relative -top-[5px]" />
+        <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#8892b0]" />
       </motion.div>
 
-      {/* Layout */}
-      <motion.div
-        className="flex flex-col md:flex-row gap-8"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        variants={{
-          visible: {
-            transition: {
-              staggerChildren: 0.15,
-            },
-          },
-        }}
-      >
-        {/* Tabs */}
-        <motion.div className="md:w-1/4 border-l border-[#8892b0]" variants={{ hidden: {}, visible: {} }}>
-          <ul className="flex md:flex-col text-sm font-mono">
-            {tabs.map((tab, i) => (
-              <motion.li
-                key={tab}
-                initial={{ opacity: 0, x: -15 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 + 0.2 }}
-              >
-                <button
-                  className={`w-full text-left px-4 py-3 transition-colors duration-200 ${
-                    activeTab === tab
-                      ? "border-l-2 border-[#64ffda] text-[#64ffda] dark:text-[#64ffda] bg-[#64ffda]/[0.05]"
-                      : "text-[#4b5563] dark:text-[#8892b0] hover:bg-[#64ffda]/[0.03] hover:text-[#64ffda]"
-                  }`}
-                  onClick={() => setActiveTab(tab)}
-                >
-                  {tab}
-                </button>
-              </motion.li>
-            ))}
-          </ul>
-        </motion.div>
-
-        {/* Content */}
+      {loading ? (
+        <p className="text-center text-[#8892b0]">Loading experience content...</p>
+      ) : (
         <motion.div
-          className="md:w-3/4"
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
-          transition={{ duration: 0.5 }}
+          className="flex flex-col md:flex-row gap-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
         >
-          <h3 className="text-xl font-semibold text-[#111827] dark:text-[#ccd6f6]">
-            {experienceData[activeTab].title}{" "}
-            <span className="text-[#007acc] dark:text-[#64ffda]">@ {experienceData[activeTab].context}</span>
-          </h3>
-          <p className="text-sm font-mono text-[#4b5563] dark:text-[#8892b0] mb-4">
-            {experienceData[activeTab].date}
-          </p>
-          <ul className="list-disc ml-5 space-y-2 text-[#4b5563] dark:text-[#8892b0]">
-            {experienceData[activeTab].points.map((point, i) => (
-              <motion.li
-                key={i}
-                className="leading-relaxed"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
+          {/* Tabs */}
+          <div className="md:w-1/4 border-l border-[#8892b0]">
+            <ul className="flex md:flex-col text-sm font-mono">
+              {(Object.keys(experiences) as ExperienceKey[]).map((key) => (
+                <li key={key}>
+                  <button
+                    onClick={() => setActiveTab(key)}
+                    className={`w-full text-left px-4 py-3 transition ${
+                      activeTab === key
+                        ? "border-l-2 border-[#64ffda] text-[#64ffda] bg-[#64ffda]/[0.05]"
+                        : "text-[#4b5563] dark:text-[#8892b0] hover:text-[#64ffda]"
+                    }`}
+                  >
+                    {key}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Form */}
+          <div className="md:w-3/4 space-y-4">
+            <input
+              placeholder="Title"
+              value={experiences[activeTab].title}
+              onChange={(e) => handleChange("title", e.target.value)}
+              className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+            />
+            <input
+              placeholder="Context"
+              value={experiences[activeTab].context}
+              onChange={(e) => handleChange("context", e.target.value)}
+              className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+            />
+            <input
+              placeholder="Date"
+              value={experiences[activeTab].date}
+              onChange={(e) => handleChange("date", e.target.value)}
+              className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+            />
+
+            <div>
+              <label className="text-sm text-[#64ffda]">Bullet Points</label>
+              {experiences[activeTab].points.map((pt, idx) => (
+                <input
+                  key={idx}
+                  placeholder={`Point ${idx + 1}`}
+                  value={pt}
+                  onChange={(e) => handleChange("points", e.target.value, idx)}
+                  className="w-full my-1 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+                />
+              ))}
+              <button
+                onClick={handleAddPoint}
+                className="mt-2 text-sm text-[#64ffda] hover:underline"
               >
-                {point}
-              </motion.li>
-            ))}
-          </ul>
+                + Add Bullet Point
+              </button>
+            </div>
+
+            <div className="mt-4 flex gap-4 items-center">
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-5 py-2 rounded bg-[#64ffda] text-[#0a192f] font-semibold hover:bg-[#52d0c5] transition"
+              >
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+              {message && <span className="text-sm text-green-400">{message}</span>}
+            </div>
+          </div>
         </motion.div>
-      </motion.div>
+      )}
     </section>
   );
 };
