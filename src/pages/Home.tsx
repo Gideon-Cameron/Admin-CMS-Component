@@ -1,7 +1,7 @@
 import Hero from "../components/Hero";
 import About from "../components/About";
 import Experience from "../components/Experience";
-// import Skills from "../components/Skills";
+import Skills from "../components/Skills";
 // import Projects from "../components/Projects";
 import Testimonial from "../components/Testimonial";
 import Contact from "../components/Contact";
@@ -14,8 +14,8 @@ const Home = () => {
         <section id="hero"><Hero /></section>
          <section id="about"><About /></section>
          <section id="experience"><Experience /></section>
-        {/*<section id="skills"><Skills /></section>
-        <section id="projects"><Projects /></section> */}
+        {<section id="skills"><Skills /></section>
+        /* <section id="projects"><Projects /></section> */}
         <section id="testimonials"><Testimonial /></section>
         <section id="contact"><Contact /></section>
       </main>
