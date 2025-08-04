@@ -62,7 +62,7 @@ const Skills = () => {
   const handleAddSkill = () => {
     setSkillGroups((prev) => {
       const updated = { ...prev };
-      updated[activeTab].push("");
+      updated[activeTab] = [...(updated[activeTab] || []), ""];
       return updated;
     });
   };
@@ -118,7 +118,7 @@ const Skills = () => {
       ) : (
         <>
           {/* Tab Buttons */}
-          <div className="flex flex-wrap gap-4 mb-6">
+          <div className="flex flex-wrap items-center gap-4 mb-6">
             {Object.keys(skillGroups).map((category) => (
               <button
                 key={category}
@@ -132,28 +132,35 @@ const Skills = () => {
                 {category}
               </button>
             ))}
-            <button
-              onClick={handleAddCategory}
-              className="text-sm text-[#64ffda] hover:underline"
-            >
-              + Add Group
-            </button>
+
+            {/* Add/Delete Buttons Together */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleAddCategory}
+                className="text-sm text-[#64ffda] hover:underline"
+              >
+                + Add Group
+              </button>
+              {activeTab && (
+                <button
+                  onClick={handleDeleteCategory}
+                  title="Delete Group"
+                  className="text-red-500 hover:text-red-700 text-lg leading-none"
+                >
+                  ❌
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Rename/Delete Group */}
+          {/* Rename Active Group */}
           {activeTab && (
-            <div className="mb-6 flex gap-4 items-center">
+            <div className="mb-6">
               <input
                 value={activeTab}
                 onChange={(e) => handleCategoryRename(e.target.value)}
                 className="p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
               />
-              <button
-                onClick={handleDeleteCategory}
-                className="text-sm text-red-500 hover:underline"
-              >
-                Delete Group
-              </button>
             </div>
           )}
 
