@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import { uploadImageToCloudinary } from "../lib/uploadImageToCloudinary";
 
 type Project = {
   title: string;
@@ -22,6 +23,7 @@ const ProjectsEditor = () => {
   ]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [message, setMessage] = useState("");
 
   const projectsRef = doc(db, "content", "projects");
@@ -64,11 +66,28 @@ const ProjectsEditor = () => {
     ]);
   };
 
+  const handleImageUpload = async (file: File, index: number) => {
+    if (!file) return;
+    setUploadingIndex(index);
+    try {
+      const url = await uploadImageToCloudinary(file);
+      handleChange(index, "imageUrl", url);
+      setMessage("✅ Image uploaded.");
+      console.log("🖼️ Uploaded image:", url);
+    } catch (err) {
+      console.error("❌ Image upload failed", err);
+      setMessage("Upload failed");
+    } finally {
+      setUploadingIndex(null);
+      setTimeout(() => setMessage(""), 3000);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
       await setDoc(projectsRef, { list: projects });
-      setMessage("Saved successfully!");
+      setMessage("💾 Saved successfully!");
       console.log("💾 Saved project data:", projects);
     } catch (err) {
       console.error("❌ Failed to save projects", err);
@@ -112,12 +131,28 @@ const ProjectsEditor = () => {
                 onChange={(e) => handleChange(index, "description", e.target.value)}
                 className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
               />
-              <input
-                placeholder="Image URL"
-                value={project.imageUrl}
-                onChange={(e) => handleChange(index, "imageUrl", e.target.value)}
-                className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
-              />
+
+              {/* Image Preview + Upload */}
+              <div className="space-y-2">
+                {project.imageUrl && (
+                  <img
+                    src={project.imageUrl}
+                    alt="Preview"
+                    className="w-full max-w-xs rounded shadow"
+                  />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    e.target.files?.[0] && handleImageUpload(e.target.files[0], index)
+                  }
+                />
+                {uploadingIndex === index && (
+                  <p className="text-sm text-yellow-400">Uploading image...</p>
+                )}
+              </div>
+
               <input
                 placeholder="Live Preview URL"
                 value={project.liveUrl}
@@ -142,9 +177,7 @@ const ProjectsEditor = () => {
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>
-            {message && (
-              <span className="text-sm text-green-400">{message}</span>
-            )}
+            {message && <span className="text-sm text-green-400">{message}</span>}
           </div>
         </>
       )}

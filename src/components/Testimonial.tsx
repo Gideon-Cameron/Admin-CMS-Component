@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import { uploadImageToCloudinary } from "../lib/uploadImageToCloudinary";
 
 type TestimonialItem = {
   imageUrl: string;
@@ -15,6 +16,7 @@ const Testimonial = () => {
   ]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [message, setMessage] = useState("");
 
   const testimonialRef = doc(db, "content", "testimonials");
@@ -46,6 +48,18 @@ const Testimonial = () => {
       updated[index][field] = value;
       return updated;
     });
+  };
+
+  const handleImageUpload = async (index: number, file: File) => {
+    if (!file) return;
+    setUploadingIndex(index);
+
+    const url = await uploadImageToCloudinary(file);
+    if (url) {
+      handleChange(index, "imageUrl", url);
+    }
+
+    setUploadingIndex(null);
   };
 
   const handleAdd = () => {
@@ -86,14 +100,38 @@ const Testimonial = () => {
       ) : (
         <>
           {testimonials.map((item, idx) => (
-            <div key={idx} className="mb-6 space-y-3">
-              <input
-                type="text"
-                placeholder="Image URL"
-                value={item.imageUrl}
-                onChange={(e) => handleChange(idx, "imageUrl", e.target.value)}
-                className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
-              />
+            <div key={idx} className="mb-10 space-y-4 p-4 border rounded border-[#64ffda]/30">
+              {/* Circular Image Preview */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#64ffda]">
+                  {item.imageUrl ? (
+                    <img
+                      src={item.imageUrl}
+                      alt={`testimonial-${idx}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#112240] flex items-center justify-center text-sm text-[#64ffda]">
+                      No image
+                    </div>
+                  )}
+                </div>
+
+                {/* Upload Button */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(idx, file);
+                  }}
+                  className="text-sm text-[#64ffda]"
+                />
+                {uploadingIndex === idx && (
+                  <p className="text-xs text-yellow-400">Uploading...</p>
+                )}
+              </div>
+
               <textarea
                 placeholder="Testimonial (max 1000 chars)"
                 maxLength={1000}
