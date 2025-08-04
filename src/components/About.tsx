@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db, storage } from "../lib/firebase";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { db } from "../lib/firebase";
+import { uploadImageToCloudinary } from "../lib/uploadImageToCloudinary"; // ← Make sure this path matches
 
 const About = () => {
   const [title, setTitle] = useState("");
@@ -33,18 +33,18 @@ const About = () => {
   }, []);
 
   const handleImageUpload = async (file: File) => {
-    if (!file) return;
-
-    const imageRef = ref(storage, `about/${file.name}`);
     setUploading(true);
     try {
-      await uploadBytes(imageRef, file);
-      const url = await getDownloadURL(imageRef);
-      setImageUrl(url);
-      setMessage("Image uploaded!");
+      const url = await uploadImageToCloudinary(file);
+      if (url) {
+        setImageUrl(url);
+        setMessage("✅ Image uploaded!");
+      } else {
+        setMessage("❌ Upload failed");
+      }
     } catch (err) {
-      console.error("❌ Image upload failed:", err);
-      setMessage("Upload failed");
+      console.error("❌ Cloudinary upload error:", err);
+      setMessage("❌ Upload error");
     } finally {
       setUploading(false);
       setTimeout(() => setMessage(""), 3000);
@@ -55,10 +55,10 @@ const About = () => {
     setSaving(true);
     try {
       await setDoc(aboutRef, { title, paragraphs, imageUrl });
-      setMessage("Saved successfully!");
+      setMessage("✅ Saved successfully!");
     } catch (err) {
       console.error("❌ Failed to save about data:", err);
-      setMessage("Save failed");
+      setMessage("❌ Save failed");
     } finally {
       setSaving(false);
       setTimeout(() => setMessage(""), 3000);

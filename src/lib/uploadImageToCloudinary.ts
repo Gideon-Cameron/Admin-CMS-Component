@@ -1,10 +1,10 @@
-export const uploadImageToCloudinary = async (file: File): Promise<string | null> => {
+export const uploadImageToCloudinary = async (file: File): Promise<string> => {
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
   
     if (!cloudName || !uploadPreset) {
       console.error("❌ Missing Cloudinary credentials in .env");
-      return null;
+      return "";
     }
   
     const formData = new FormData();
@@ -21,14 +21,14 @@ export const uploadImageToCloudinary = async (file: File): Promise<string | null
   
       if (response.ok && data.secure_url) {
         console.log("✅ Image uploaded:", data.secure_url);
-        return data.secure_url;
+        return data.secure_url as string;
       } else {
         console.error("❌ Cloudinary error:", data);
-        return null;
+        return "";
       }
     } catch (error) {
       console.error("❌ Upload failed:", error);
-      return null;
+      return "";
     }
   };
   
