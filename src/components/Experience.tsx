@@ -81,7 +81,15 @@ const Experience = () => {
   const handleAddPoint = () => {
     setExperiences((prev) => {
       const updated = { ...prev };
-      updated[activeTab].points.push("");
+      updated[activeTab].points = [...updated[activeTab].points, ""];
+      return updated;
+    });
+  };
+
+  const handleRemovePoint = (index: number) => {
+    setExperiences((prev) => {
+      const updated = { ...prev };
+      updated[activeTab].points = updated[activeTab].points.filter((_, i) => i !== index);
       return updated;
     });
   };
@@ -153,13 +161,21 @@ const Experience = () => {
             <div>
               <label className="text-sm text-[#64ffda]">Bullet Points</label>
               {experiences[activeTab].points.map((pt, idx) => (
-                <input
-                  key={idx}
-                  placeholder={`Point ${idx + 1}`}
-                  value={pt}
-                  onChange={(e) => handleChange("points", e.target.value, idx)}
-                  className="w-full my-1 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
-                />
+                <div key={idx} className="flex gap-2 items-center my-1">
+                  <input
+                    placeholder={`Point ${idx + 1}`}
+                    value={pt}
+                    onChange={(e) => handleChange("points", e.target.value, idx)}
+                    className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+                  />
+                  <button
+                    onClick={() => handleRemovePoint(idx)}
+                    title="Remove bullet point"
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    ❌
+                  </button>
+                </div>
               ))}
               <button
                 onClick={handleAddPoint}
