@@ -11,6 +11,7 @@ const Skills = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const skillRef = doc(db, "content", "skills");
 
@@ -88,8 +89,7 @@ const Skills = () => {
     setActiveTab(newGroupName);
   };
 
-  const handleDeleteCategory = () => {
-    if (!confirm(`Are you sure you want to delete '${activeTab}'?`)) return;
+  const confirmDeleteCategory = () => {
     setSkillGroups((prev) => {
       const updated = { ...prev };
       delete updated[activeTab];
@@ -97,6 +97,7 @@ const Skills = () => {
       setActiveTab(remaining[0] || "");
       return updated;
     });
+    setShowConfirmModal(false);
   };
 
   return (
@@ -133,7 +134,7 @@ const Skills = () => {
               </button>
             ))}
 
-            {/* Add/Delete Buttons Together */}
+            {/* Add/Delete Buttons */}
             <div className="flex items-center gap-2">
               <button
                 onClick={handleAddCategory}
@@ -143,7 +144,7 @@ const Skills = () => {
               </button>
               {activeTab && (
                 <button
-                  onClick={handleDeleteCategory}
+                  onClick={() => setShowConfirmModal(true)}
                   title="Delete Group"
                   className="text-red-500 hover:text-red-700 text-lg leading-none"
                 >
@@ -153,7 +154,7 @@ const Skills = () => {
             </div>
           </div>
 
-          {/* Rename Active Group */}
+          {/* Rename Group */}
           {activeTab && (
             <div className="mb-6">
               <input
@@ -164,7 +165,7 @@ const Skills = () => {
             </div>
           )}
 
-          {/* Skill Inputs */}
+          {/* Skills Inputs */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -189,7 +190,7 @@ const Skills = () => {
             </motion.div>
           </AnimatePresence>
 
-          {/* Add Skill Button */}
+          {/* Add Skill */}
           <button
             onClick={handleAddSkill}
             className="mt-4 text-sm text-[#64ffda] hover:underline"
@@ -208,6 +209,31 @@ const Skills = () => {
             </button>
             {message && <span className="text-sm text-green-400">{message}</span>}
           </div>
+
+          {/* Confirm Delete Modal */}
+          {showConfirmModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-[#0a192f] p-6 rounded-lg shadow-xl w-[90%] max-w-md text-center">
+                <h3 className="text-lg font-semibold mb-4 text-[#111827] dark:text-[#ccd6f6]">
+                  Are you sure you want to delete &quot;{activeTab}&quot;?
+                </h3>
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={() => setShowConfirmModal(false)}
+                    className="px-4 py-2 rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#112240]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDeleteCategory}
+                    className="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </section>
