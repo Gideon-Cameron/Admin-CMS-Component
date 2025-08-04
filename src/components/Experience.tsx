@@ -138,7 +138,7 @@ const Experience = () => {
               className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
             />
             <input
-              placeholder="Context"
+              placeholder="Context, eg Freelance"
               value={experiences[activeTab].context}
               onChange={(e) => handleChange("context", e.target.value)}
               className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
