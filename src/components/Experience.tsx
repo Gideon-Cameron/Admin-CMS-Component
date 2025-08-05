@@ -79,14 +79,16 @@ const Experience = () => {
   };
 
   const handleAddPoint = () => {
+    console.log("🟢 handleAddPoint called");
     setExperiences((prev) => {
       const updated = { ...prev };
       updated[activeTab].points = [...updated[activeTab].points, ""];
       return updated;
     });
   };
-
+  
   const handleRemovePoint = (index: number) => {
+    console.log("🔴 handleRemovePoint called for", index);
     setExperiences((prev) => {
       const updated = { ...prev };
       updated[activeTab].points = updated[activeTab].points.filter((_, i) => i !== index);
