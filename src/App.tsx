@@ -2,8 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { useAuth } from "./context/AuthContext";
 import LoginForm from "./components/LoginForm";
 import Home from "./pages/Home";
-import AdminSidebar from "./components/AdminSidebar"; // <-- make sure this exists
-import SocialLinks from "./pages/SocialLinks"; // <-- if you're routing to it directly
+import AdminSidebar from "./components/AdminSidebar"; 
+import SocialLinks from "./components/LeftSidebar"; 
 
 const App = () => {
   const { user, loading } = useAuth();
