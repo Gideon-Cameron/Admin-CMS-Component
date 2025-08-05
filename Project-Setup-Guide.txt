@@ -1,0 +1,101 @@
+🛠️ Project Setup Guide
+This guide will help you configure Firebase and Cloudinary so the portfolio and admin dashboard work correctly.
+
+⚙️ Prerequisites
+Node.js v18+
+
+Firebase Project
+
+Cloudinary Account
+
+.env file in your root directory
+
+🔥 Firebase Setup
+Create Firebase Project
+
+Go to Firebase Console
+→ Click "Add Project" → Name your project → Disable/Enable Google Analytics (your choice)
+
+Enable Firestore
+
+In the Firebase dashboard, go to Build → Firestore Database
+
+Click "Create Database"
+
+Choose Start in test mode (for development)
+
+Select location and create
+
+Enable Authentication
+
+Go to Build → Authentication
+
+Click Get Started
+
+Under Sign-in Method, enable Email/Password
+
+Get Firebase Config
+
+Go to Project Settings (⚙️ top left)
+
+Under General, scroll to Your apps
+
+Click </> Web App, register your app name, and copy the config
+
+Add Firebase SDK config to .env.local
+
+env
+Copy
+Edit
+VITE_FIREBASE_API_KEY=your-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-auth-domain
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-storage-bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
+📁 These variables are used in lib/firebase.ts to initialize Firebase.
+
+☁️ Cloudinary Setup (for Image Uploads)
+Create Cloudinary Account
+
+Go to https://cloudinary.com/ and create a free account.
+
+Find your Cloudinary credentials
+
+Go to Dashboard → Copy the following:
+
+cloud_name
+
+api_key
+
+api_secret
+
+Add Cloudinary to .env.local
+
+env
+Copy
+Edit
+VITE_CLOUDINARY_CLOUD_NAME=your-cloud-name
+VITE_CLOUDINARY_UPLOAD_PRESET=your-upload-preset
+📌 You will also need to define your unsigned upload preset in Cloudinary (Settings → Upload → Upload Presets → Add unsigned preset).
+
+Make sure:
+
+Signing Mode is set to Unsigned
+
+Enable "Return delete token" if you plan to delete images
+
+✅ Folder & File Notes
+lib/firebase.ts — handles Firebase init
+
+components/SocialLinks.tsx — reads/writes social links to Firestore
+
+components/Upload.tsx (or wherever upload happens) — uses Cloudinary credentials for uploads
+
+📦 Install & Run Locally
+bash
+Copy
+Edit
+npm install
+npm run dev
+Make sure .env.local is present and configured properly before running.
