@@ -1,43 +1,86 @@
-# Gideon Cameron — Developer Portfolio 🚀
+# ⚡ Developer Portfolio CMS
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/9f3c2b34-3d5e-4d89-a6e3-bcb8c3fd0a1a/deploy-status)](https://gideon-portfolio-gc.netlify.app/)
-![GitHub last commit](https://img.shields.io/github/last-commit/Gideon-Cameron/your-repo-name?color=64ffda)
-![GitHub repo size](https://img.shields.io/github/repo-size/Gideon-Cameron/your-repo-name?color=007acc)
+A modern, dynamic, and fully customizable **developer portfolio** built with **React**, powered by **Firebase** and **Cloudinary**, and designed with an intuitive admin dashboard for real-time content management.
 
-## 🌐 Live Site
+---
 
-🔗 [gideon-portfolio-gc.netlify.app](https://gideon-portfolio-gc.netlify.app/)
+## ✨ Overview
 
-## 🧩 About
+This project enables developers and freelancers to present their personal portfolios with minimal effort. It combines a sleek frontend portfolio with a secure backend CMS (Content Management System) that allows non-technical users to update content like:
 
-This is my personal developer portfolio, designed and built from scratch using:
+- Hero Section
+- About Section
+- Experience & Work History
+- Skills
+- Projects with Live Demos
+- Testimonials
+- Social Media Links
 
-- **React + TypeScript**
-- **Tailwind CSS**
+All editable directly from a protected **admin interface**, with changes reflected instantly.
+
+---
+
+## 🔧 Built With
+
+- **React + Vite** – Blazing-fast modern frontend
+- **Firebase** – Authentication & Firestore database
+- **Framer Motion** – Animations
+- **Tailwind CSS** – Utility-first responsive design
+- **Cloudinary** – Image upload and management
+- **React Router DOM** – Page routing and navigation
+- **React Icons** – Built-in support for hundreds of icons
+- **TypeScript** – Type safety and IDE support
+
+---
+
+## 📁 Project Structure
+
+├── components/ # Shared UI components
+├── context/ # Authentication context
+├── pages/ # Main route pages (admin / login / etc)
+├── lib/ # Firebase and Cloudinary config
+├── assets/ # Static assets and icons
+├── App.tsx # Routing setup
+└── index.tsx # Entry point
+
+yaml
+Copy
+Edit
+
+---
+
+## 🛠 Admin Features
+
+- Login with Firebase Authentication
+- Add/Edit/Delete:
+  - Experience entries
+  - Projects
+  - Skills
+  - Testimonials
+  - Social media links
+- Upload and manage images using Cloudinary
+- Real-time saving and previewing
+
+---
+
+## 🎨 Frontend Features
+
 - Fully responsive layout
-- Dark-mode–first UI
-- Smooth scroll navigation
-- Animated project modals and section transitions
-- EmailJS-powered contact form
+- Smooth scrolling & section-based design
+- Sidebar with only visible links based on admin setup
+- Modal-based project viewer
+- Theme-ready (light/dark mode)
 
-## 🚀 Lighthouse Score (Latest Audit)
+---
 
-| Metric          | Score |
-|------------------|-------|
-| Performance      | 95 ✅ |
-| Accessibility    | 100 ✅ |
-| Best Practices   | 100 ✅ |
-| SEO              | 100 ✅ |
+## 📘 Setup Instructions
 
-Audited using Chrome DevTools Lighthouse, Desktop mode.
+For step-by-step instructions on setting up Firebase, Cloudinary, and running the project locally, see:
 
-## 🖥️ Tech Stack
+📄 **[Project Setup Guide.txt](./Project%20Setup%20Guide.txt)**
 
-- **React + Vite**
-- **TypeScript**
-- **Tailwind CSS**
-- **EmailJS** (for contact form)
-- **Netlify** (for deployment)
+---
 
-## 📂 Folder Structure
+## 📄 License
 
+This project is open-source and available under the [MIT License](LICENSE).
