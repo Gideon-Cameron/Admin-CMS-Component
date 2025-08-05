@@ -10,17 +10,21 @@ type ExperienceItem = {
   points: string[];
 };
 
-type ExperienceKey = "Experience1" | "Experience2" | "Experience3";
+type ExperienceKey = "Experience1" | "Experience2" | "Experience3" | "Experience4" | "Experience5";
 
 type ExperienceMap = {
   [key in ExperienceKey]: ExperienceItem;
 };
 
+const initialExperience: ExperienceItem = { title: "", context: "", date: "", points: [""] };
+
 const Experience = () => {
   const [experiences, setExperiences] = useState<ExperienceMap>({
-    Experience1: { title: "", context: "", date: "", points: [""] },
-    Experience2: { title: "", context: "", date: "", points: [""] },
-    Experience3: { title: "", context: "", date: "", points: [""] },
+    Experience1: { ...initialExperience },
+    Experience2: { ...initialExperience },
+    Experience3: { ...initialExperience },
+    Experience4: { ...initialExperience },
+    Experience5: { ...initialExperience },
   });
 
   const [activeTab, setActiveTab] = useState<ExperienceKey>("Experience1");
@@ -37,7 +41,10 @@ const Experience = () => {
         const snap = await getDoc(experienceRef);
         if (snap.exists()) {
           const data = snap.data() as Partial<ExperienceMap>;
-          setExperiences((prev) => ({ ...prev, ...data }));
+          setExperiences((prev) => ({
+            ...prev,
+            ...data,
+          }));
           console.log("✅ Experience data loaded:", data);
         } else {
           console.warn("⚠️ Experience document does not exist.");
@@ -54,9 +61,28 @@ const Experience = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await setDoc(experienceRef, experiences);
+      const cleaned: Partial<ExperienceMap> = {};
+
+      Object.entries(experiences).forEach(([key, exp]) => {
+        const trimmedPoints = exp.points.filter((pt) => pt.trim() !== "");
+
+        const isEmpty =
+          !exp.title.trim() &&
+          !exp.context.trim() &&
+          !exp.date.trim() &&
+          trimmedPoints.length === 0;
+
+        if (!isEmpty) {
+          cleaned[key as ExperienceKey] = {
+            ...exp,
+            points: trimmedPoints,
+          };
+        }
+      });
+
+      await setDoc(experienceRef, cleaned);
       setMessage("Saved successfully!");
-      console.log("💾 Saved experience data:", experiences);
+      console.log("💾 Cleaned experience data:", cleaned);
     } catch (err) {
       console.error("❌ Failed to save experience data", err);
       setMessage("Failed to save.");
@@ -79,16 +105,14 @@ const Experience = () => {
   };
 
   const handleAddPoint = () => {
-    console.log("🟢 handleAddPoint called");
     setExperiences((prev) => {
       const updated = { ...prev };
       updated[activeTab].points = [...updated[activeTab].points, ""];
       return updated;
     });
   };
-  
+
   const handleRemovePoint = (index: number) => {
-    console.log("🔴 handleRemovePoint called for", index);
     setExperiences((prev) => {
       const updated = { ...prev };
       updated[activeTab].points = updated[activeTab].points.filter((_, i) => i !== index);
@@ -132,7 +156,7 @@ const Experience = () => {
                         : "text-[#4b5563] dark:text-[#8892b0] hover:text-[#64ffda]"
                     }`}
                   >
-                    {key}
+                    {experiences[key].title || key}
                   </button>
                 </li>
               ))}
@@ -148,7 +172,7 @@ const Experience = () => {
               className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
             />
             <input
-              placeholder="Context, eg Freelance"
+              placeholder="Context, e.g. Freelance"
               value={experiences[activeTab].context}
               onChange={(e) => handleChange("context", e.target.value)}
               className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
