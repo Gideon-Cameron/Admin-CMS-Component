@@ -8,21 +8,7 @@ import Contact from "../components/Contact";
 import Footer from "../components/Footer";
 
 const Home = () => {
-    // const mockProjects = [
-    //     {
-    //       id: "1",
-    //       title: "Portfolio Website",
-    //       shortDescription: "Responsive and modern developer portfolio.",
-    //       description: "A full-stack developer portfolio website showcasing projects and skills.",
-    //       imageUrl: "https://via.placeholder.com/600x400",
-    //       skills: ["React", "TypeScript", "Firebase"],
-    //       liveUrl: "https://example.com",
-    //     },
-    //   ];
 
-//   const mockOneLiners = {
-//     1: "Responsive and modern developer portfolio.",
-//   };
 
   return (
     <>
