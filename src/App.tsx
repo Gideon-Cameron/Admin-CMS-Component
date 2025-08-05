@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { useAuth } from "./context/AuthContext";
 import LoginForm from "./components/LoginForm";
 import Home from "./pages/Home";
+import AdminSidebar from "./components/AdminSidebar"; // <-- make sure this exists
+import SocialLinks from "./pages/SocialLinks"; // <-- if you're routing to it directly
 
 const App = () => {
   const { user, loading } = useAuth();
@@ -17,6 +19,13 @@ const App = () => {
     );
   }
 
+  const AdminLayout = ({ children }: { children: React.ReactNode }) => (
+    <div className="flex">
+      <AdminSidebar />
+      <main className="flex-1 px-4 sm:px-8 py-8">{children}</main>
+    </div>
+  );
+
   return (
     <Router>
       <div className="bg-light-background text-light-textPrimary dark:bg-dark-background dark:text-dark-textPrimary transition-colors duration-300 font-sans min-h-screen">
@@ -25,10 +34,33 @@ const App = () => {
             path="/login"
             element={!user ? <LoginForm /> : <Navigate to="/admin" replace />}
           />
+
           <Route
             path="/admin"
-            element={user ? <Home /> : <Navigate to="/login" replace />}
+            element={
+              user ? (
+                <AdminLayout>
+                  <Home />
+                </AdminLayout>
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
           />
+
+          <Route
+            path="/admin/social"
+            element={
+              user ? (
+                <AdminLayout>
+                  <SocialLinks />
+                </AdminLayout>
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+
           <Route
             path="*"
             element={<Navigate to={user ? "/admin" : "/login"} replace />}
