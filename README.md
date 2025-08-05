@@ -33,15 +33,6 @@ All editable directly from a protected **admin interface**, with changes reflect
 
 ---
 
-## 📁 Project Structure
-
-├── components/ # Shared UI components
-├── context/ # Authentication context
-├── pages/ # Main route pages (admin / login / etc)
-├── lib/ # Firebase and Cloudinary config
-├── assets/ # Static assets and icons
-├── App.tsx # Routing setup
-└── index.tsx # Entry point
 
 yaml
 Copy
