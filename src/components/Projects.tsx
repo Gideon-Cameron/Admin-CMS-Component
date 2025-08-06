@@ -25,6 +25,7 @@ const ProjectsEditor = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [message, setMessage] = useState("");
+  const [confirmIndex, setConfirmIndex] = useState<number | null>(null); // ✅ New
 
   const projectsRef = doc(db, "content", "projects");
 
@@ -66,27 +67,31 @@ const ProjectsEditor = () => {
     ]);
   };
 
-  const handleDeleteProject = (index: number) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this project?");
-    if (!confirmDelete) return;
+  const confirmDelete = (index: number) => {
+    setConfirmIndex(index);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (confirmIndex === null) return;
 
     const updated = [...projects];
-    updated.splice(index, 1);
+    updated.splice(confirmIndex, 1);
     setProjects(updated);
+    setConfirmIndex(null);
 
-    // Immediately save to Firestore
-    setDoc(projectsRef, { list: updated })
-      .then(() => {
-        setMessage("🗑️ Project deleted and saved.");
-        console.log("🗑️ Deleted project at index:", index);
-      })
-      .catch((err) => {
-        console.error("❌ Failed to delete project", err);
-        setMessage("Failed to delete project.");
-      })
-      .finally(() => {
-        setTimeout(() => setMessage(""), 3000);
-      });
+    try {
+      await setDoc(projectsRef, { list: updated });
+      setMessage("🗑️ Project deleted and saved.");
+    } catch (err) {
+      console.error("❌ Failed to delete project", err);
+      setMessage("Failed to delete project.");
+    } finally {
+      setTimeout(() => setMessage(""), 3000);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmIndex(null);
   };
 
   const handleImageUpload = async (file: File, index: number) => {
@@ -122,7 +127,7 @@ const ProjectsEditor = () => {
   };
 
   return (
-    <section className="max-w-5xl mx-auto px-6 md:px-12 py-20">
+    <section className="max-w-5xl mx-auto px-6 md:px-12 py-20 relative">
       <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono mb-6">
         Projects
       </h2>
@@ -138,7 +143,7 @@ const ProjectsEditor = () => {
             >
               {/* Delete Button */}
               <button
-                onClick={() => handleDeleteProject(index)}
+                onClick={() => confirmDelete(index)}
                 className="absolute top-2 right-2 text-red-500 text-sm hover:text-red-700"
               >
                 Delete
@@ -214,6 +219,34 @@ const ProjectsEditor = () => {
             {message && <span className="text-sm text-green-400">{message}</span>}
           </div>
         </>
+      )}
+
+      {/* Modal Overlay */}
+      {confirmIndex !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white dark:bg-[#0a192f] p-6 rounded shadow-lg w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-[#0a192f] dark:text-white mb-4">
+              Confirm Deletion
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Are you sure you want to delete this project?
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={handleCancelDelete}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-[#0a192f] dark:text-white rounded hover:bg-gray-400 dark:hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirmed}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );
