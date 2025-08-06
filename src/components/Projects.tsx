@@ -66,6 +66,29 @@ const ProjectsEditor = () => {
     ]);
   };
 
+  const handleDeleteProject = (index: number) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this project?");
+    if (!confirmDelete) return;
+
+    const updated = [...projects];
+    updated.splice(index, 1);
+    setProjects(updated);
+
+    // Immediately save to Firestore
+    setDoc(projectsRef, { list: updated })
+      .then(() => {
+        setMessage("🗑️ Project deleted and saved.");
+        console.log("🗑️ Deleted project at index:", index);
+      })
+      .catch((err) => {
+        console.error("❌ Failed to delete project", err);
+        setMessage("Failed to delete project.");
+      })
+      .finally(() => {
+        setTimeout(() => setMessage(""), 3000);
+      });
+  };
+
   const handleImageUpload = async (file: File, index: number) => {
     if (!file) return;
     setUploadingIndex(index);
@@ -109,7 +132,18 @@ const ProjectsEditor = () => {
       ) : (
         <>
           {projects.map((project, index) => (
-            <div key={index} className="mb-10 space-y-4 p-4 border rounded border-[#64ffda]/30">
+            <div
+              key={index}
+              className="mb-10 space-y-4 p-4 border rounded border-[#64ffda]/30 relative"
+            >
+              {/* Delete Button */}
+              <button
+                onClick={() => handleDeleteProject(index)}
+                className="absolute top-2 right-2 text-red-500 text-sm hover:text-red-700"
+              >
+                Delete
+              </button>
+
               <input
                 placeholder="Project Title"
                 value={project.title}
