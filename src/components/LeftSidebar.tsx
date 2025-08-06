@@ -3,8 +3,13 @@ import { motion } from "framer-motion";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
+type SocialLink = {
+  name: string;
+  url: string;
+};
+
 const SocialLinks = () => {
-  const [links, setLinks] = useState<string[]>([""]);
+  const [links, setLinks] = useState<SocialLink[]>([{ name: "", url: "" }]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -18,8 +23,15 @@ const SocialLinks = () => {
         const snap = await getDoc(ref);
         if (snap.exists()) {
           const data = snap.data();
-          setLinks((data.links || [""]).slice(0, 5));
-          console.log("✅ Loaded social links:", data.links);
+          const rawLinks = data.links || [];
+
+          // Transform strings into objects if old format
+          const formatted: SocialLink[] = rawLinks.map((item: any) =>
+            typeof item === "string" ? { name: "", url: item } : item
+          );
+
+          setLinks(formatted.slice(0, 5));
+          console.log("✅ Loaded social links:", formatted);
         } else {
           console.warn("⚠️ Social links document does not exist.");
         }
@@ -29,18 +41,19 @@ const SocialLinks = () => {
         setLoading(false);
       }
     };
+
     fetchLinks();
   }, []);
 
-  const handleChange = (index: number, value: string) => {
+  const handleChange = (index: number, key: keyof SocialLink, value: string) => {
     const updated = [...links];
-    updated[index] = value;
+    updated[index][key] = value;
     setLinks(updated);
   };
 
   const handleAddLink = () => {
     if (links.length < 5) {
-      setLinks([...links, ""]);
+      setLinks([...links, { name: "", url: "" }]);
     }
   };
 
@@ -53,7 +66,10 @@ const SocialLinks = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const filtered = links.filter((link) => link.trim() !== "").slice(0, 5);
+      const filtered = links
+        .filter((link) => link.url.trim() !== "")
+        .slice(0, 5);
+
       await setDoc(ref, { links: filtered });
       console.log("💾 Saved social links:", filtered);
       setMessage("Saved successfully!");
@@ -90,18 +106,25 @@ const SocialLinks = () => {
         >
           <div className="space-y-4">
             {links.map((link, idx) => (
-              <div key={idx} className="flex gap-2 items-center">
+              <div key={idx} className="flex gap-2 flex-col md:flex-row">
+                <input
+                  type="text"
+                  placeholder="Link name (e.g. GitHub)"
+                  value={link.name}
+                  onChange={(e) => handleChange(idx, "name", e.target.value)}
+                  className="w-full md:w-1/3 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+                />
                 <input
                   type="url"
                   placeholder="https://your-link.com"
-                  value={link}
-                  onChange={(e) => handleChange(idx, e.target.value)}
-                  className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+                  value={link.url}
+                  onChange={(e) => handleChange(idx, "url", e.target.value)}
+                  className="w-full md:flex-1 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
                 />
                 <button
                   onClick={() => handleRemoveLink(idx)}
                   title="Remove link"
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-500 hover:text-red-700 self-start"
                 >
                   ❌
                 </button>
@@ -110,7 +133,7 @@ const SocialLinks = () => {
             {links.length < 5 && (
               <button
                 onClick={handleAddLink}
-                className="text-sm text-[#64ffda] hover:underline"
+                className="text-sm text-[#64ffda] hover:underline mt-2"
               >
                 + Add Link
               </button>
