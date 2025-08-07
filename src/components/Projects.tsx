@@ -24,7 +24,7 @@ const ProjectsEditor = () => {
   const [confirmIndex, setConfirmIndex] = useState<number | null>(null);
 
   const projectsRef = doc(db, "content", "projects");
-  const metaRef = doc(db, "content/sections", "projects");
+  const metaRef = doc(db, "sections", "projects");
 
   useEffect(() => {
     const fetchData = async () => {
