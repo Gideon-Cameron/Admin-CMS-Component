@@ -16,7 +16,7 @@ const Skills = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const skillRef = doc(db, "content", "skills");
-  const metaRef = doc(db, "content/sections", "skills");
+  const metaRef = doc(db, "sections", "skills");
 
   useEffect(() => {
     const fetchSkills = async () => {
