@@ -11,22 +11,35 @@ const About = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [order, setOrder] = useState<number>(1);
+  const [enabled, setEnabled] = useState<boolean>(true);
+
   const aboutRef = doc(db, "content", "about");
+  const sectionsRef = doc(db, "content", "sections");
 
   useEffect(() => {
-    const fetchAbout = async () => {
+    const fetchData = async () => {
       try {
-        const snap = await getDoc(aboutRef);
-        if (snap.exists()) {
-          const data = snap.data();
+        const aboutSnap = await getDoc(aboutRef);
+        if (aboutSnap.exists()) {
+          const data = aboutSnap.data();
           setParagraphs(data.paragraphs || [""]);
           setImageUrl(data.imageUrl || "");
         }
+
+        const sectionsSnap = await getDoc(sectionsRef);
+        if (sectionsSnap.exists()) {
+          const sections = sectionsSnap.data();
+          if (sections.about) {
+            setOrder(sections.about.order || 1);
+            setEnabled(sections.about.enabled ?? true);
+          }
+        }
       } catch (err) {
-        console.error("❌ Failed to fetch about content:", err);
+        console.error("❌ Failed to fetch about content or sections config:", err);
       }
     };
-    fetchAbout();
+    fetchData();
   }, []);
 
   const handleImageUpload = async (file: File) => {
@@ -51,10 +64,20 @@ const About = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Save about content
       await setDoc(aboutRef, { title: "About Me", paragraphs, imageUrl });
+
+      // Save section order and visibility
+      const snap = await getDoc(sectionsRef);
+      const existing = snap.exists() ? snap.data() : {};
+      await setDoc(sectionsRef, {
+        ...existing,
+        about: { order, enabled }
+      });
+
       setMessage("✅ Saved successfully!");
     } catch (err) {
-      console.error("❌ Failed to save about data:", err);
+      console.error("❌ Failed to save about data or section config:", err);
       setMessage("❌ Save failed");
     } finally {
       setSaving(false);
@@ -67,10 +90,33 @@ const About = () => {
       {/* Header */}
       <motion.div className="flex items-center mb-10">
         <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono">
-          <span className="mr-2">01.</span> About Me
+          <span className="mr-2">{String(order).padStart(2, "0")}.</span> About Me
         </h2>
         <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#233554]" />
       </motion.div>
+
+      {/* Section Settings */}
+      <div className="flex flex-wrap gap-6 mb-10">
+        <label className="flex items-center gap-2 text-sm font-mono text-gray-700 dark:text-gray-300">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+            className="accent-[#64ffda]"
+          />
+          Show this section
+        </label>
+
+        <label className="flex items-center gap-2 text-sm font-mono text-gray-700 dark:text-gray-300">
+          Order:
+          <input
+            type="number"
+            value={order}
+            onChange={(e) => setOrder(Number(e.target.value))}
+            className="w-20 px-2 py-1 rounded bg-gray-100 dark:bg-[#112240] dark:text-white border border-gray-300 dark:border-gray-600"
+          />
+        </label>
+      </div>
 
       {/* Content Grid */}
       <div className="flex flex-col md:flex-row gap-12 items-start">

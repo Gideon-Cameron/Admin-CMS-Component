@@ -8,44 +8,62 @@ type SkillGroups = Record<string, string[]>;
 const Skills = () => {
   const [skillGroups, setSkillGroups] = useState<SkillGroups>({});
   const [activeTab, setActiveTab] = useState<string>("");
+  const [sectionOrder, setSectionOrder] = useState<number>(4);
+  const [enabled, setEnabled] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const skillRef = doc(db, "content", "skills");
+  const metaRef = doc(db, "content/sections", "skills");
 
   useEffect(() => {
     const fetchSkills = async () => {
       setLoading(true);
       try {
-        const snap = await getDoc(skillRef);
-        if (snap.exists()) {
-          const data = snap.data() as SkillGroups;
+        const [skillsSnap, metaSnap] = await Promise.all([
+          getDoc(skillRef),
+          getDoc(metaRef),
+        ]);
+
+        if (skillsSnap.exists()) {
+          const data = skillsSnap.data() as SkillGroups;
           setSkillGroups(data);
           setActiveTab(Object.keys(data)[0] || "");
           console.log("✅ Skill data loaded:", data);
-        } else {
-          console.warn("⚠️ Skills document does not exist.");
+        }
+
+        if (metaSnap.exists()) {
+          const meta = metaSnap.data();
+          setSectionOrder(meta.order ?? 4);
+          setEnabled(meta.enabled ?? true);
+          console.log("⚙️ Skills section meta loaded:", meta);
         }
       } catch (err) {
-        console.error("❌ Failed to fetch skills", err);
+        console.error("❌ Failed to fetch skills data", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchSkills();
   }, []);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await setDoc(skillRef, skillGroups);
-      setMessage("Skills saved!");
-      console.log("💾 Saved skills data:", skillGroups);
+      await Promise.all([
+        setDoc(skillRef, skillGroups),
+        setDoc(metaRef, { order: sectionOrder, enabled }),
+      ]);
+
+      setMessage("✅ Skills and settings saved!");
+      console.log("💾 Saved skill data:", skillGroups);
+      console.log("⚙️ Saved meta:", { order: sectionOrder, enabled });
     } catch (err) {
       console.error("❌ Failed to save skills", err);
-      setMessage("Save failed. See console.");
+      setMessage("❌ Save failed. See console.");
     } finally {
       setSaving(false);
       setTimeout(() => setMessage(""), 3000);
@@ -102,6 +120,7 @@ const Skills = () => {
 
   return (
     <section id="skills" className="max-w-6xl mx-auto px-6 md:px-12 py-20 md:py-24">
+      {/* Heading */}
       <motion.div
         className="flex items-center mb-12"
         initial={{ opacity: 0, y: 20 }}
@@ -109,16 +128,38 @@ const Skills = () => {
         transition={{ delay: 0.1, duration: 0.6 }}
       >
         <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono whitespace-nowrap">
-          <span className="mr-2">04.</span> Skills
+          <span className="mr-2">Skills</span>
         </h2>
         <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#8892b0]" />
       </motion.div>
+
+      {/* Section Settings */}
+      <div className="mb-8 flex flex-wrap gap-4 items-center">
+        <label className="flex items-center gap-2 font-mono text-sm">
+          <span>Section Order:</span>
+          <input
+            type="number"
+            min={0}
+            value={sectionOrder}
+            onChange={(e) => setSectionOrder(Number(e.target.value))}
+            className="w-20 p-1 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+          />
+        </label>
+        <label className="flex items-center gap-2 font-mono text-sm">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+          />
+          Show Section
+        </label>
+      </div>
 
       {loading ? (
         <p className="text-center text-[#8892b0]">Loading skills...</p>
       ) : (
         <>
-          {/* Tab Buttons */}
+          {/* Tabs */}
           <div className="flex flex-wrap items-center gap-4 mb-6">
             {Object.keys(skillGroups).map((category) => (
               <button
@@ -134,7 +175,7 @@ const Skills = () => {
               </button>
             ))}
 
-            {/* Add/Delete Buttons */}
+            {/* Add/Delete */}
             <div className="flex items-center gap-2">
               <button
                 onClick={handleAddCategory}
@@ -154,7 +195,7 @@ const Skills = () => {
             </div>
           </div>
 
-          {/* Rename Group */}
+          {/* Rename */}
           {activeTab && (
             <div className="mb-6">
               <input
@@ -190,7 +231,7 @@ const Skills = () => {
             </motion.div>
           </AnimatePresence>
 
-          {/* Add Skill */}
+          {/* Add Skill Button */}
           <button
             onClick={handleAddSkill}
             className="mt-4 text-sm text-[#64ffda] hover:underline"

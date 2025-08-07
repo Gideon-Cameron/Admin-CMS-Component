@@ -28,26 +28,42 @@ const Experience = () => {
   });
 
   const [activeTab, setActiveTab] = useState<ExperienceKey>("Experience1");
+  const [sectionOrder, setSectionOrder] = useState<number>(3);
+  const [enabled, setEnabled] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
   const experienceRef = doc(db, "content", "experience");
+  const sectionMetaRef = doc(db, "sections", "experience"); // ✅ Valid
 
   useEffect(() => {
-    const fetchExperience = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const snap = await getDoc(experienceRef);
-        if (snap.exists()) {
-          const data = snap.data() as Partial<ExperienceMap>;
+        const [contentSnap, metaSnap] = await Promise.all([
+          getDoc(experienceRef),
+          getDoc(sectionMetaRef),
+        ]);
+
+        if (contentSnap.exists()) {
+          const data = contentSnap.data() as Partial<ExperienceMap>;
           setExperiences((prev) => ({
             ...prev,
             ...data,
           }));
-          console.log("✅ Experience data loaded:", data);
+          console.log("✅ Experience content loaded:", data);
         } else {
           console.warn("⚠️ Experience document does not exist.");
+        }
+
+        if (metaSnap.exists()) {
+          const meta = metaSnap.data();
+          if (typeof meta.order === "number") setSectionOrder(meta.order);
+          if (typeof meta.enabled === "boolean") setEnabled(meta.enabled);
+          console.log("✅ Experience section metadata loaded:", meta);
+        } else {
+          console.warn("⚠️ Experience metadata not found.");
         }
       } catch (err) {
         console.error("❌ Failed to fetch experience data", err);
@@ -55,7 +71,7 @@ const Experience = () => {
         setLoading(false);
       }
     };
-    fetchExperience();
+    fetchData();
   }, []);
 
   const handleSave = async () => {
@@ -80,12 +96,17 @@ const Experience = () => {
         }
       });
 
-      await setDoc(experienceRef, cleaned);
-      setMessage("Saved successfully!");
-      console.log("💾 Cleaned experience data:", cleaned);
+      await Promise.all([
+        setDoc(experienceRef, cleaned),
+        setDoc(sectionMetaRef, { order: sectionOrder, enabled }),
+      ]);
+
+      setMessage("✅ Saved successfully!");
+      console.log("💾 Experience data saved:", cleaned);
+      console.log("⚙️ Section settings saved:", { order: sectionOrder, enabled });
     } catch (err) {
       console.error("❌ Failed to save experience data", err);
-      setMessage("Failed to save.");
+      setMessage("❌ Failed to save.");
     } finally {
       setSaving(false);
       setTimeout(() => setMessage(""), 3000);
@@ -129,10 +150,32 @@ const Experience = () => {
         transition={{ duration: 0.6 }}
       >
         <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono whitespace-nowrap">
-          <span className="mr-2">03.</span> Experience
+          <span className="mr-2">Experience</span>
         </h2>
         <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#8892b0]" />
       </motion.div>
+
+      {/* Section Config */}
+      <div className="mb-8 flex flex-wrap gap-4 items-center">
+        <label className="flex items-center gap-2 font-mono text-sm">
+          <span>Section Order:</span>
+          <input
+            type="number"
+            min={0}
+            value={sectionOrder}
+            onChange={(e) => setSectionOrder(Number(e.target.value))}
+            className="w-20 p-1 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+          />
+        </label>
+        <label className="flex items-center gap-2 font-mono text-sm">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+          />
+          Show Section
+        </label>
+      </div>
 
       {loading ? (
         <p className="text-center text-[#8892b0]">Loading experience content...</p>

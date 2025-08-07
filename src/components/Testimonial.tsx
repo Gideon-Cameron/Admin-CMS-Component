@@ -14,31 +14,46 @@ const Testimonial = () => {
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([
     { imageUrl: "", quote: "", projectLink: "" },
   ]);
+
+  const [sectionOrder, setSectionOrder] = useState<number>(5);
+  const [enabled, setEnabled] = useState<boolean>(true);
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [message, setMessage] = useState("");
 
   const testimonialRef = doc(db, "content", "testimonials");
+  const sectionMetaRef = doc(db, "content/sections", "testimonials");
 
   useEffect(() => {
     const fetchTestimonials = async () => {
       setLoading(true);
       try {
-        const snap = await getDoc(testimonialRef);
+        const [snap, metaSnap] = await Promise.all([
+          getDoc(testimonialRef),
+          getDoc(sectionMetaRef),
+        ]);
+
         if (snap.exists()) {
           const data = snap.data().items as TestimonialItem[];
           setTestimonials(data);
-          console.log("✅ Testimonial data loaded:", data);
-        } else {
-          console.warn("⚠️ Testimonials document does not exist.");
+          console.log("✅ Testimonials loaded:", data);
+        }
+
+        if (metaSnap.exists()) {
+          const meta = metaSnap.data();
+          setSectionOrder(meta.order ?? 5);
+          setEnabled(meta.enabled ?? true);
+          console.log("⚙️ Testimonial meta loaded:", meta);
         }
       } catch (err) {
-        console.error("❌ Failed to fetch testimonials", err);
+        console.error("❌ Failed to fetch testimonials:", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchTestimonials();
   }, []);
 
@@ -53,13 +68,20 @@ const Testimonial = () => {
   const handleImageUpload = async (index: number, file: File) => {
     if (!file) return;
     setUploadingIndex(index);
-
-    const url = await uploadImageToCloudinary(file);
-    if (url) {
-      handleChange(index, "imageUrl", url);
+    try {
+      const url = await uploadImageToCloudinary(file);
+      if (url) {
+        handleChange(index, "imageUrl", url);
+        setMessage("✅ Image uploaded");
+        console.log("🖼️ Uploaded image:", url);
+      }
+    } catch (err) {
+      console.error("❌ Failed to upload image", err);
+      setMessage("Upload failed");
+    } finally {
+      setUploadingIndex(null);
+      setTimeout(() => setMessage(""), 3000);
     }
-
-    setUploadingIndex(null);
   };
 
   const handleAdd = () => {
@@ -69,9 +91,13 @@ const Testimonial = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await setDoc(testimonialRef, { items: testimonials });
-      setMessage("Testimonials saved!");
-      console.log("💾 Saved testimonial data:", testimonials);
+      await Promise.all([
+        setDoc(testimonialRef, { items: testimonials }),
+        setDoc(sectionMetaRef, { order: sectionOrder, enabled }),
+      ]);
+      setMessage("✅ Testimonials saved");
+      console.log("💾 Saved testimonials:", testimonials);
+      console.log("⚙️ Saved meta:", { order: sectionOrder, enabled });
     } catch (err) {
       console.error("❌ Failed to save testimonials", err);
       setMessage("Save failed.");
@@ -95,13 +121,34 @@ const Testimonial = () => {
         <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#8892b0]" />
       </motion.div>
 
+      {/* Section Settings */}
+      <div className="flex items-center gap-6 mb-8">
+        <label className="flex items-center gap-2 font-mono text-sm">
+          Section Order:
+          <input
+            type="number"
+            min={0}
+            value={sectionOrder}
+            onChange={(e) => setSectionOrder(Number(e.target.value))}
+            className="w-20 p-1 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+          />
+        </label>
+        <label className="flex items-center gap-2 font-mono text-sm">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+          />
+          Show Section
+        </label>
+      </div>
+
       {loading ? (
         <p className="text-center text-[#8892b0]">Loading testimonials...</p>
       ) : (
         <>
           {testimonials.map((item, idx) => (
             <div key={idx} className="mb-10 space-y-4 p-4 border rounded border-[#64ffda]/30">
-              {/* Circular Image Preview */}
               <div className="flex flex-col items-center gap-2">
                 <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#64ffda]">
                   {item.imageUrl ? (
@@ -117,7 +164,6 @@ const Testimonial = () => {
                   )}
                 </div>
 
-                {/* Upload Button */}
                 <input
                   type="file"
                   accept="image/*"

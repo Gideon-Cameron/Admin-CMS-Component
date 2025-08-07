@@ -13,38 +13,47 @@ type Project = {
 
 const ProjectsEditor = () => {
   const [projects, setProjects] = useState<Project[]>([
-    {
-      title: "",
-      shortDescription: "",
-      description: "",
-      imageUrl: "",
-      liveUrl: "",
-    },
+    { title: "", shortDescription: "", description: "", imageUrl: "", liveUrl: "" },
   ]);
+  const [sectionOrder, setSectionOrder] = useState<number>(4);
+  const [enabled, setEnabled] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [message, setMessage] = useState("");
-  const [confirmIndex, setConfirmIndex] = useState<number | null>(null); // ✅ New
+  const [confirmIndex, setConfirmIndex] = useState<number | null>(null);
 
   const projectsRef = doc(db, "content", "projects");
+  const metaRef = doc(db, "content/sections", "projects");
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const snap = await getDoc(projectsRef);
+        const [snap, metaSnap] = await Promise.all([
+          getDoc(projectsRef),
+          getDoc(metaRef),
+        ]);
+
         if (snap.exists()) {
           const data = snap.data().list as Project[];
           setProjects(data);
           console.log("✅ Projects loaded:", data);
         }
+
+        if (metaSnap.exists()) {
+          const meta = metaSnap.data();
+          setSectionOrder(meta.order ?? 4);
+          setEnabled(meta.enabled ?? true);
+          console.log("⚙️ Projects section meta loaded:", meta);
+        }
       } catch (err) {
-        console.error("❌ Failed to load projects", err);
+        console.error("❌ Failed to load project data", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
@@ -57,13 +66,7 @@ const ProjectsEditor = () => {
   const handleAddProject = () => {
     setProjects((prev) => [
       ...prev,
-      {
-        title: "",
-        shortDescription: "",
-        description: "",
-        imageUrl: "",
-        liveUrl: "",
-      },
+      { title: "", shortDescription: "", description: "", imageUrl: "", liveUrl: "" },
     ]);
   };
 
@@ -73,7 +76,6 @@ const ProjectsEditor = () => {
 
   const handleDeleteConfirmed = async () => {
     if (confirmIndex === null) return;
-
     const updated = [...projects];
     updated.splice(confirmIndex, 1);
     setProjects(updated);
@@ -114,11 +116,15 @@ const ProjectsEditor = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await setDoc(projectsRef, { list: projects });
+      await Promise.all([
+        setDoc(projectsRef, { list: projects }),
+        setDoc(metaRef, { order: sectionOrder, enabled }),
+      ]);
       setMessage("💾 Saved successfully!");
-      console.log("💾 Saved project data:", projects);
+      console.log("✅ Saved project list:", projects);
+      console.log("⚙️ Saved section meta:", { order: sectionOrder, enabled });
     } catch (err) {
-      console.error("❌ Failed to save projects", err);
+      console.error("❌ Failed to save", err);
       setMessage("Save failed.");
     } finally {
       setSaving(false);
@@ -132,6 +138,28 @@ const ProjectsEditor = () => {
         Projects
       </h2>
 
+      {/* Section settings */}
+      <div className="flex items-center gap-6 mb-8">
+        <label className="flex items-center gap-2 font-mono text-sm">
+          Section Order:
+          <input
+            type="number"
+            min={0}
+            value={sectionOrder}
+            onChange={(e) => setSectionOrder(Number(e.target.value))}
+            className="w-20 p-1 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+          />
+        </label>
+        <label className="flex items-center gap-2 font-mono text-sm">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+          />
+          Show Section
+        </label>
+      </div>
+
       {loading ? (
         <p className="text-center text-[#8892b0]">Loading projects...</p>
       ) : (
@@ -141,7 +169,6 @@ const ProjectsEditor = () => {
               key={index}
               className="mb-10 space-y-4 p-4 border rounded border-[#64ffda]/30 relative"
             >
-              {/* Delete Button */}
               <button
                 onClick={() => confirmDelete(index)}
                 className="absolute top-2 right-2 text-red-500 text-sm hover:text-red-700"
@@ -171,7 +198,6 @@ const ProjectsEditor = () => {
                 className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
               />
 
-              {/* Image Preview + Upload */}
               <div className="space-y-2">
                 {project.imageUrl && (
                   <img
@@ -221,7 +247,7 @@ const ProjectsEditor = () => {
         </>
       )}
 
-      {/* Modal Overlay */}
+      {/* Confirm Delete Modal */}
       {confirmIndex !== null && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white dark:bg-[#0a192f] p-6 rounded shadow-lg w-full max-w-sm">
