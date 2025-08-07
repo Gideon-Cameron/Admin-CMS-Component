@@ -15,7 +15,7 @@ const About = () => {
   const [enabled, setEnabled] = useState<boolean>(true);
 
   const aboutRef = doc(db, "content", "about");
-  const sectionsRef = doc(db, "content", "sections");
+  const sectionsRef = doc(db, "sections", "about");
 
   useEffect(() => {
     const fetchData = async () => {
