@@ -24,7 +24,7 @@ const Testimonial = () => {
   const [message, setMessage] = useState("");
 
   const testimonialRef = doc(db, "content", "testimonials");
-  const sectionMetaRef = doc(db, "content/sections", "testimonials");
+  const sectionMetaRef = doc(db, "sections", "testimonials");
 
   useEffect(() => {
     const fetchTestimonials = async () => {
