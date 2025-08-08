@@ -10,13 +10,23 @@ type ExperienceItem = {
   points: string[];
 };
 
-type ExperienceKey = "Experience1" | "Experience2" | "Experience3" | "Experience4" | "Experience5";
+type ExperienceKey =
+  | "Experience1"
+  | "Experience2"
+  | "Experience3"
+  | "Experience4"
+  | "Experience5";
 
 type ExperienceMap = {
   [key in ExperienceKey]: ExperienceItem;
 };
 
-const initialExperience: ExperienceItem = { title: "", context: "", date: "", points: [""] };
+const initialExperience: ExperienceItem = {
+  title: "",
+  context: "",
+  date: "",
+  points: [""],
+};
 
 const Experience = () => {
   const [experiences, setExperiences] = useState<ExperienceMap>({
@@ -28,60 +38,53 @@ const Experience = () => {
   });
 
   const [activeTab, setActiveTab] = useState<ExperienceKey>("Experience1");
-  const [sectionOrder, setSectionOrder] = useState<number>(3);
+  const [displayNumber, setDisplayNumber] = useState<number>(1); // ✅ renamed from order
   const [enabled, setEnabled] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
   const experienceRef = doc(db, "content", "experience");
-  const sectionMetaRef = doc(db, "sections", "experience"); // ✅ Valid
+  const sectionsRef = doc(db, "sections", "experience");
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [contentSnap, metaSnap] = await Promise.all([
-          getDoc(experienceRef),
-          getDoc(sectionMetaRef),
-        ]);
-
-        if (contentSnap.exists()) {
-          const data = contentSnap.data() as Partial<ExperienceMap>;
+        // Load content
+        const experienceSnap = await getDoc(experienceRef);
+        if (experienceSnap.exists()) {
+          const data = experienceSnap.data() as Partial<ExperienceMap>;
           setExperiences((prev) => ({
             ...prev,
             ...data,
           }));
-          console.log("✅ Experience content loaded:", data);
-        } else {
-          console.warn("⚠️ Experience document does not exist.");
         }
 
-        if (metaSnap.exists()) {
-          const meta = metaSnap.data();
-          if (typeof meta.order === "number") setSectionOrder(meta.order);
-          if (typeof meta.enabled === "boolean") setEnabled(meta.enabled);
-          console.log("✅ Experience section metadata loaded:", meta);
-        } else {
-          console.warn("⚠️ Experience metadata not found.");
+        // Load metadata
+        const sectionSnap = await getDoc(sectionsRef);
+        if (sectionSnap.exists()) {
+          const section = sectionSnap.data();
+          setDisplayNumber(section.displayNumber ?? 1); // ✅ use displayNumber
+          setEnabled(section.enabled ?? true);
         }
       } catch (err) {
-        console.error("❌ Failed to fetch experience data", err);
+        console.error("❌ Failed to load experience data:", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Clean up experiences before saving
       const cleaned: Partial<ExperienceMap> = {};
-
       Object.entries(experiences).forEach(([key, exp]) => {
         const trimmedPoints = exp.points.filter((pt) => pt.trim() !== "");
-
         const isEmpty =
           !exp.title.trim() &&
           !exp.context.trim() &&
@@ -98,22 +101,24 @@ const Experience = () => {
 
       await Promise.all([
         setDoc(experienceRef, cleaned),
-        setDoc(sectionMetaRef, { order: sectionOrder, enabled }),
+        setDoc(sectionsRef, { displayNumber, enabled }), // ✅ save displayNumber
       ]);
 
       setMessage("✅ Saved successfully!");
-      console.log("💾 Experience data saved:", cleaned);
-      console.log("⚙️ Section settings saved:", { order: sectionOrder, enabled });
     } catch (err) {
-      console.error("❌ Failed to save experience data", err);
-      setMessage("❌ Failed to save.");
+      console.error("❌ Failed to save experience data:", err);
+      setMessage("❌ Save failed");
     } finally {
       setSaving(false);
       setTimeout(() => setMessage(""), 3000);
     }
   };
 
-  const handleChange = (field: keyof ExperienceItem, value: string, index?: number) => {
+  const handleChange = (
+    field: keyof ExperienceItem,
+    value: string,
+    index?: number
+  ) => {
     setExperiences((prev) => {
       const updated = { ...prev };
       if (field === "points" && index !== undefined) {
@@ -136,13 +141,16 @@ const Experience = () => {
   const handleRemovePoint = (index: number) => {
     setExperiences((prev) => {
       const updated = { ...prev };
-      updated[activeTab].points = updated[activeTab].points.filter((_, i) => i !== index);
+      updated[activeTab].points = updated[activeTab].points.filter(
+        (_, i) => i !== index
+      );
       return updated;
     });
   };
 
   return (
     <section className="max-w-5xl mx-auto px-6 md:px-12 py-20 md:py-24">
+      {/* Header */}
       <motion.div
         className="flex items-center mb-12"
         initial={{ opacity: 0, y: 20 }}
@@ -150,7 +158,7 @@ const Experience = () => {
         transition={{ duration: 0.6 }}
       >
         <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono whitespace-nowrap">
-          <span className="mr-2">Experience</span>
+          <span className="mr-2">0.{displayNumber}</span> Experience
         </h2>
         <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#8892b0]" />
       </motion.div>
@@ -158,12 +166,12 @@ const Experience = () => {
       {/* Section Config */}
       <div className="mb-8 flex flex-wrap gap-4 items-center">
         <label className="flex items-center gap-2 font-mono text-sm">
-          <span>Section Order:</span>
+          <span>Section Number:</span>
           <input
             type="number"
             min={0}
-            value={sectionOrder}
-            onChange={(e) => setSectionOrder(Number(e.target.value))}
+            value={displayNumber}
+            onChange={(e) => setDisplayNumber(Number(e.target.value))}
             className="w-20 p-1 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
           />
         </label>
@@ -234,7 +242,9 @@ const Experience = () => {
                   <input
                     placeholder={`Point ${idx + 1}`}
                     value={pt}
-                    onChange={(e) => handleChange("points", e.target.value, idx)}
+                    onChange={(e) =>
+                      handleChange("points", e.target.value, idx)
+                    }
                     className="w-full p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
                   />
                   <button
@@ -262,7 +272,9 @@ const Experience = () => {
               >
                 {saving ? "Saving..." : "Save Changes"}
               </button>
-              {message && <span className="text-sm text-green-400">{message}</span>}
+              {message && (
+                <span className="text-sm text-green-400">{message}</span>
+              )}
             </div>
           </div>
         </motion.div>

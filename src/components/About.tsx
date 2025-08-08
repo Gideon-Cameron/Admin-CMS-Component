@@ -11,7 +11,7 @@ const About = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const [order, setOrder] = useState<number>(1);
+  const [displayNumber, setDisplayNumber] = useState<number>(1);
   const [enabled, setEnabled] = useState<boolean>(true);
 
   const aboutRef = doc(db, "content", "about");
@@ -20,6 +20,7 @@ const About = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Fetch About content
         const aboutSnap = await getDoc(aboutRef);
         if (aboutSnap.exists()) {
           const data = aboutSnap.data();
@@ -27,16 +28,15 @@ const About = () => {
           setImageUrl(data.imageUrl || "");
         }
 
+        // Fetch section config
         const sectionsSnap = await getDoc(sectionsRef);
         if (sectionsSnap.exists()) {
-          const sections = sectionsSnap.data();
-          if (sections.about) {
-            setOrder(sections.about.order || 1);
-            setEnabled(sections.about.enabled ?? true);
-          }
+          const sectionData = sectionsSnap.data();
+          setDisplayNumber(sectionData.displayNumber ?? 1);
+          setEnabled(sectionData.enabled ?? true);
         }
       } catch (err) {
-        console.error("❌ Failed to fetch about content or sections config:", err);
+        console.error("❌ Failed to fetch about content or section config:", err);
       }
     };
     fetchData();
@@ -64,15 +64,13 @@ const About = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Save about content
+      // Save About content
       await setDoc(aboutRef, { title: "About Me", paragraphs, imageUrl });
 
-      // Save section order and visibility
-      const snap = await getDoc(sectionsRef);
-      const existing = snap.exists() ? snap.data() : {};
+      // Save section config (enabled + displayNumber)
       await setDoc(sectionsRef, {
-        ...existing,
-        about: { order, enabled }
+        enabled,
+        displayNumber: displayNumber,
       });
 
       setMessage("✅ Saved successfully!");
@@ -90,7 +88,7 @@ const About = () => {
       {/* Header */}
       <motion.div className="flex items-center mb-10">
         <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono">
-          <span className="mr-2">{String(order).padStart(2, "0")}.</span> About Me
+          <span className="mr-2">{`0.${displayNumber}`}</span> About Me
         </h2>
         <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#233554]" />
       </motion.div>
@@ -108,11 +106,16 @@ const About = () => {
         </label>
 
         <label className="flex items-center gap-2 text-sm font-mono text-gray-700 dark:text-gray-300">
-          Order:
+          Display Number:
           <input
             type="number"
-            value={order}
-            onChange={(e) => setOrder(Number(e.target.value))}
+            min={1}
+            value={displayNumber}
+            onChange={(e) =>
+              setDisplayNumber(
+                e.target.value === "" ? 1 : Number(e.target.value)
+              )
+            }
             className="w-20 px-2 py-1 rounded bg-gray-100 dark:bg-[#112240] dark:text-white border border-gray-300 dark:border-gray-600"
           />
         </label>

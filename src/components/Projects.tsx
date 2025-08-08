@@ -27,40 +27,46 @@ const ProjectsEditor = () => {
   const metaRef = doc(db, "sections", "projects");
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProjects = async () => {
       setLoading(true);
       try {
-        const [snap, metaSnap] = await Promise.all([
+        const [projectsSnap, metaSnap] = await Promise.all([
           getDoc(projectsRef),
           getDoc(metaRef),
         ]);
 
-        if (snap.exists()) {
-          const data = snap.data().list as Project[];
+        if (projectsSnap.exists()) {
+          const data = projectsSnap.data().list as Project[];
           setProjects(data);
           console.log("✅ Projects loaded:", data);
+        } else {
+          console.warn("⚠️ Projects document not found.");
         }
 
         if (metaSnap.exists()) {
           const meta = metaSnap.data();
-          setSectionOrder(meta.order ?? 4);
-          setEnabled(meta.enabled ?? true);
-          console.log("⚙️ Projects section meta loaded:", meta);
+          if (typeof meta.order === "number") setSectionOrder(meta.order);
+          if (typeof meta.enabled === "boolean") setEnabled(meta.enabled);
+          console.log("⚙️ Projects metadata loaded:", meta);
+        } else {
+          console.warn("⚠️ Projects metadata not found.");
         }
       } catch (err) {
-        console.error("❌ Failed to load project data", err);
+        console.error("❌ Failed to load projects data", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchProjects();
   }, []);
 
   const handleChange = (index: number, field: keyof Project, value: string) => {
-    const updated = [...projects];
-    updated[index][field] = value;
-    setProjects(updated);
+    setProjects((prev) => {
+      const updated = [...prev];
+      updated[index][field] = value;
+      return updated;
+    });
   };
 
   const handleAddProject = () => {
@@ -84,9 +90,10 @@ const ProjectsEditor = () => {
     try {
       await setDoc(projectsRef, { list: updated });
       setMessage("🗑️ Project deleted and saved.");
+      console.log("🗑️ Deleted project index:", confirmIndex);
     } catch (err) {
       console.error("❌ Failed to delete project", err);
-      setMessage("Failed to delete project.");
+      setMessage("❌ Failed to delete project.");
     } finally {
       setTimeout(() => setMessage(""), 3000);
     }
@@ -106,7 +113,7 @@ const ProjectsEditor = () => {
       console.log("🖼️ Uploaded image:", url);
     } catch (err) {
       console.error("❌ Image upload failed", err);
-      setMessage("Upload failed");
+      setMessage("❌ Upload failed.");
     } finally {
       setUploadingIndex(null);
       setTimeout(() => setMessage(""), 3000);
@@ -121,11 +128,11 @@ const ProjectsEditor = () => {
         setDoc(metaRef, { order: sectionOrder, enabled }),
       ]);
       setMessage("💾 Saved successfully!");
-      console.log("✅ Saved project list:", projects);
-      console.log("⚙️ Saved section meta:", { order: sectionOrder, enabled });
+      console.log("✅ Saved projects:", projects);
+      console.log("⚙️ Saved metadata:", { order: sectionOrder, enabled });
     } catch (err) {
-      console.error("❌ Failed to save", err);
-      setMessage("Save failed.");
+      console.error("❌ Failed to save projects", err);
+      setMessage("❌ Save failed.");
     } finally {
       setSaving(false);
       setTimeout(() => setMessage(""), 3000);
@@ -134,11 +141,12 @@ const ProjectsEditor = () => {
 
   return (
     <section className="max-w-5xl mx-auto px-6 md:px-12 py-20 relative">
+      {/* Heading */}
       <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono mb-6">
         Projects
       </h2>
 
-      {/* Section settings */}
+      {/* Section Settings */}
       <div className="flex items-center gap-6 mb-8">
         <label className="flex items-center gap-2 font-mono text-sm">
           Section Order:
@@ -171,9 +179,10 @@ const ProjectsEditor = () => {
             >
               <button
                 onClick={() => confirmDelete(index)}
+                title="Delete Project"
                 className="absolute top-2 right-2 text-red-500 text-sm hover:text-red-700"
               >
-                Delete
+                ❌
               </button>
 
               <input
@@ -234,6 +243,7 @@ const ProjectsEditor = () => {
             + Add Project
           </button>
 
+          {/* Save Button */}
           <div className="flex gap-4 items-center">
             <button
               onClick={handleSave}
@@ -249,24 +259,21 @@ const ProjectsEditor = () => {
 
       {/* Confirm Delete Modal */}
       {confirmIndex !== null && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white dark:bg-[#0a192f] p-6 rounded shadow-lg w-full max-w-sm">
-            <h3 className="text-lg font-semibold text-[#0a192f] dark:text-white mb-4">
-              Confirm Deletion
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[#0a192f] p-6 rounded-lg shadow-xl w-[90%] max-w-md text-center">
+            <h3 className="text-lg font-semibold mb-4 text-[#111827] dark:text-[#ccd6f6]">
               Are you sure you want to delete this project?
-            </p>
-            <div className="flex justify-end gap-4">
+            </h3>
+            <div className="flex justify-center gap-4">
               <button
                 onClick={handleCancelDelete}
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-[#0a192f] dark:text-white rounded hover:bg-gray-400 dark:hover:bg-gray-600"
+                className="px-4 py-2 rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#112240]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteConfirmed}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                className="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600"
               >
                 Delete
               </button>

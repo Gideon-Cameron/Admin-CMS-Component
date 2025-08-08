@@ -22,6 +22,7 @@ const Testimonial = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [message, setMessage] = useState("");
+  const [confirmIndex, setConfirmIndex] = useState<number | null>(null);
 
   const testimonialRef = doc(db, "content", "testimonials");
   const sectionMetaRef = doc(db, "sections", "testimonials");
@@ -88,6 +89,32 @@ const Testimonial = () => {
     setTestimonials((prev) => [...prev, { imageUrl: "", quote: "", projectLink: "" }]);
   };
 
+  const confirmDelete = (index: number) => {
+    setConfirmIndex(index);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (confirmIndex === null) return;
+    const updated = [...testimonials];
+    updated.splice(confirmIndex, 1);
+    setTestimonials(updated);
+    setConfirmIndex(null);
+
+    try {
+      await setDoc(testimonialRef, { items: updated });
+      setMessage("🗑️ Testimonial deleted and saved.");
+    } catch (err) {
+      console.error("❌ Failed to delete testimonial", err);
+      setMessage("Delete failed.");
+    } finally {
+      setTimeout(() => setMessage(""), 3000);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmIndex(null);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -116,7 +143,7 @@ const Testimonial = () => {
         transition={{ delay: 0.1, duration: 0.6 }}
       >
         <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono whitespace-nowrap">
-          <span className="mr-2">05.</span> Testimonials
+          <span className="mr-2">0.{sectionOrder}</span> Testimonials
         </h2>
         <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#8892b0]" />
       </motion.div>
@@ -148,7 +175,18 @@ const Testimonial = () => {
       ) : (
         <>
           {testimonials.map((item, idx) => (
-            <div key={idx} className="mb-10 space-y-4 p-4 border rounded border-[#64ffda]/30">
+            <div
+              key={idx}
+              className="mb-10 space-y-4 p-4 border rounded border-[#64ffda]/30 relative"
+            >
+              {/* Delete button */}
+              <button
+                onClick={() => confirmDelete(idx)}
+                className="absolute top-2 right-2 text-red-500 text-sm hover:text-red-700"
+              >
+                Delete
+              </button>
+
               <div className="flex flex-col items-center gap-2">
                 <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#64ffda]">
                   {item.imageUrl ? (
@@ -213,6 +251,34 @@ const Testimonial = () => {
             {message && <span className="text-sm text-green-400">{message}</span>}
           </div>
         </>
+      )}
+
+      {/* Confirm Delete Modal */}
+      {confirmIndex !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white dark:bg-[#0a192f] p-6 rounded shadow-lg w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-[#0a192f] dark:text-white mb-4">
+              Confirm Deletion
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Are you sure you want to delete this testimonial?
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={handleCancelDelete}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-[#0a192f] dark:text-white rounded hover:bg-gray-400 dark:hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirmed}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );
