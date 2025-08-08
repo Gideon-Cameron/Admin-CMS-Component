@@ -9,7 +9,7 @@ const Skills = () => {
   const [skillGroups, setSkillGroups] = useState<SkillGroups>({});
   const [activeTab, setActiveTab] = useState<string>("");
 
-  const [order, setOrder] = useState<number>(1); // Admin-chosen number for "0.{order} Skills"
+  const [sectionNumber, setSectionNumber] = useState<number>(1); // Admin-chosen display number
   const [enabled, setEnabled] = useState<boolean>(true);
 
   const [loading, setLoading] = useState(false);
@@ -37,7 +37,7 @@ const Skills = () => {
 
         if (sectionsSnap.exists()) {
           const meta = sectionsSnap.data();
-          if (typeof meta.order === "number") setOrder(meta.order);
+          if (typeof meta.number === "number") setSectionNumber(meta.number);
           if (typeof meta.enabled === "boolean") setEnabled(meta.enabled);
         }
       } catch (err) {
@@ -63,7 +63,7 @@ const Skills = () => {
 
       await Promise.all([
         setDoc(skillRef, cleanedGroups),
-        setDoc(sectionsRef, { order, enabled }),
+        setDoc(sectionsRef, { number: sectionNumber, enabled }),
       ]);
 
       setMessage("✅ Saved successfully!");
@@ -134,7 +134,7 @@ const Skills = () => {
         transition={{ delay: 0.1, duration: 0.6 }}
       >
         <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono whitespace-nowrap">
-          <span className="mr-2">0.{order}</span> Skills
+          <span className="mr-2">0.{String(sectionNumber).padStart(2, "0")}</span> Skills
         </h2>
         <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#8892b0]" />
       </motion.div>
@@ -146,8 +146,8 @@ const Skills = () => {
           <input
             type="number"
             min={0}
-            value={order}
-            onChange={(e) => setOrder(Number(e.target.value))}
+            value={sectionNumber}
+            onChange={(e) => setSectionNumber(Math.max(0, Number(e.target.value)))}
             className="w-20 p-1 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
           />
         </label>
@@ -220,7 +220,10 @@ const Skills = () => {
               initial="hidden"
               animate="visible"
               exit="hidden"
-              variants={{ visible: { transition: { staggerChildren: 0.07 } }, hidden: {} }}
+              variants={{
+                visible: { transition: { staggerChildren: 0.07 } },
+                hidden: {},
+              }}
             >
               {skillGroups[activeTab]?.map((skill, idx) => (
                 <motion.input
