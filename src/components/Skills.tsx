@@ -9,7 +9,7 @@ const Skills = () => {
   const [skillGroups, setSkillGroups] = useState<SkillGroups>({});
   const [activeTab, setActiveTab] = useState<string>("");
 
-  const [sectionNumber, setSectionNumber] = useState<number>(1); // Admin-chosen display number
+  const [displayNumber, setDisplayNumber] = useState<number>(1); // matches About/Experience
   const [enabled, setEnabled] = useState<boolean>(true);
 
   const [loading, setLoading] = useState(false);
@@ -37,7 +37,7 @@ const Skills = () => {
 
         if (sectionsSnap.exists()) {
           const meta = sectionsSnap.data();
-          if (typeof meta.number === "number") setSectionNumber(meta.number);
+          if (typeof meta.displayNumber === "number") setDisplayNumber(meta.displayNumber);
           if (typeof meta.enabled === "boolean") setEnabled(meta.enabled);
         }
       } catch (err) {
@@ -63,7 +63,7 @@ const Skills = () => {
 
       await Promise.all([
         setDoc(skillRef, cleanedGroups),
-        setDoc(sectionsRef, { number: sectionNumber, enabled }),
+        setDoc(sectionsRef, { displayNumber, enabled }),
       ]);
 
       setMessage("✅ Saved successfully!");
@@ -134,7 +134,7 @@ const Skills = () => {
         transition={{ delay: 0.1, duration: 0.6 }}
       >
         <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono whitespace-nowrap">
-          <span className="mr-2">0.{String(sectionNumber).padStart(2, "0")}</span> Skills
+          <span className="mr-2">0.{displayNumber}</span> Skills
         </h2>
         <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#8892b0]" />
       </motion.div>
@@ -142,12 +142,14 @@ const Skills = () => {
       {/* Section Settings */}
       <div className="mb-8 flex flex-wrap gap-4 items-center">
         <label className="flex items-center gap-2 font-mono text-sm">
-          <span>Section Number:</span>
+          <span>Display Number:</span>
           <input
             type="number"
-            min={0}
-            value={sectionNumber}
-            onChange={(e) => setSectionNumber(Math.max(0, Number(e.target.value)))}
+            min={1}
+            value={displayNumber}
+            onChange={(e) =>
+              setDisplayNumber(e.target.value === "" ? 1 : Number(e.target.value))
+            }
             className="w-20 p-1 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
           />
         </label>

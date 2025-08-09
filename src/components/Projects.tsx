@@ -15,7 +15,7 @@ const ProjectsEditor = () => {
   const [projects, setProjects] = useState<Project[]>([
     { title: "", shortDescription: "", description: "", imageUrl: "", liveUrl: "" },
   ]);
-  const [sectionOrder, setSectionOrder] = useState<number>(4);
+  const [displayNumber, setDisplayNumber] = useState<number>(4);
   const [enabled, setEnabled] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -45,7 +45,7 @@ const ProjectsEditor = () => {
 
         if (metaSnap.exists()) {
           const meta = metaSnap.data();
-          if (typeof meta.order === "number") setSectionOrder(meta.order);
+          if (typeof meta.displayNumber === "number") setDisplayNumber(meta.displayNumber);
           if (typeof meta.enabled === "boolean") setEnabled(meta.enabled);
           console.log("⚙️ Projects metadata loaded:", meta);
         } else {
@@ -125,11 +125,11 @@ const ProjectsEditor = () => {
     try {
       await Promise.all([
         setDoc(projectsRef, { list: projects }),
-        setDoc(metaRef, { order: sectionOrder, enabled }),
+        setDoc(metaRef, { displayNumber, enabled }),
       ]);
       setMessage("💾 Saved successfully!");
       console.log("✅ Saved projects:", projects);
-      console.log("⚙️ Saved metadata:", { order: sectionOrder, enabled });
+      console.log("⚙️ Saved metadata:", { displayNumber, enabled });
     } catch (err) {
       console.error("❌ Failed to save projects", err);
       setMessage("❌ Save failed.");
@@ -143,18 +143,20 @@ const ProjectsEditor = () => {
     <section className="max-w-5xl mx-auto px-6 md:px-12 py-20 relative">
       {/* Heading */}
       <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono mb-6">
-        Projects
+        <span className="mr-2">0.{displayNumber}</span> Projects
       </h2>
 
       {/* Section Settings */}
       <div className="flex items-center gap-6 mb-8">
         <label className="flex items-center gap-2 font-mono text-sm">
-          Section Order:
+          Display Number:
           <input
             type="number"
-            min={0}
-            value={sectionOrder}
-            onChange={(e) => setSectionOrder(Number(e.target.value))}
+            min={1}
+            value={displayNumber}
+            onChange={(e) =>
+              setDisplayNumber(e.target.value === "" ? 1 : Number(e.target.value))
+            }
             className="w-20 p-1 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
           />
         </label>
