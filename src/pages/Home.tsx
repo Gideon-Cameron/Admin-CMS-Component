@@ -5,7 +5,9 @@ import Skills from "../components/Skills";
 import Projects from "../components/Projects";
 import Testimonial from "../components/Testimonial";
 import SocialLinks from "../components/LeftSidebar"; // ✅ This is the admin-editable form
+import Contact from "../components/Contact";
 import Footer from "../components/Footer";
+
 
 const Home = () => {
   return (
@@ -17,6 +19,7 @@ const Home = () => {
         <section id="skills"><Skills /></section>
         <section id="projects"><Projects /></section>
         <section id="testimonials"><Testimonial /></section>
+        <section id="contact">|<Contact /></section>
         <section id="social"><SocialLinks /></section> {/* ✅ Replaces Contact */}
       </main>
       <Footer />

@@ -15,7 +15,7 @@ const Testimonial = () => {
     { imageUrl: "", quote: "", projectLink: "" },
   ]);
 
-  const [sectionOrder, setSectionOrder] = useState<number>(5);
+  const [displayNumber, setDisplayNumber] = useState<number>(5);
   const [enabled, setEnabled] = useState<boolean>(true);
 
   const [loading, setLoading] = useState(false);
@@ -44,7 +44,7 @@ const Testimonial = () => {
 
         if (metaSnap.exists()) {
           const meta = metaSnap.data();
-          setSectionOrder(meta.order ?? 5);
+          setDisplayNumber(meta.displayNumber ?? 5);
           setEnabled(meta.enabled ?? true);
           console.log("⚙️ Testimonial meta loaded:", meta);
         }
@@ -120,11 +120,11 @@ const Testimonial = () => {
     try {
       await Promise.all([
         setDoc(testimonialRef, { items: testimonials }),
-        setDoc(sectionMetaRef, { order: sectionOrder, enabled }),
+        setDoc(sectionMetaRef, { displayNumber, enabled }),
       ]);
       setMessage("✅ Testimonials saved");
       console.log("💾 Saved testimonials:", testimonials);
-      console.log("⚙️ Saved meta:", { order: sectionOrder, enabled });
+      console.log("⚙️ Saved meta:", { displayNumber, enabled });
     } catch (err) {
       console.error("❌ Failed to save testimonials", err);
       setMessage("Save failed.");
@@ -136,27 +136,32 @@ const Testimonial = () => {
 
   return (
     <section id="testimonials" className="max-w-4xl mx-auto px-6 md:px-12 py-20 md:py-24">
-      <motion.div
-        className="flex items-center mb-12"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.6 }}
-      >
-        <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono whitespace-nowrap">
-          <span className="mr-2">0.{sectionOrder}</span> Testimonials
-        </h2>
-        <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#8892b0]" />
-      </motion.div>
+      {/* Header */}
+      {typeof displayNumber === "number" && (
+        <motion.div
+          className="flex items-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+        >
+          <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono whitespace-nowrap">
+            <span className="mr-2">{`0.${displayNumber}`}</span> Testimonials
+          </h2>
+          <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#8892b0]" />
+        </motion.div>
+      )}
 
       {/* Section Settings */}
       <div className="flex items-center gap-6 mb-8">
         <label className="flex items-center gap-2 font-mono text-sm">
-          Section Order:
+          Display Number:
           <input
             type="number"
-            min={0}
-            value={sectionOrder}
-            onChange={(e) => setSectionOrder(Number(e.target.value))}
+            min={1}
+            value={displayNumber}
+            onChange={(e) =>
+              setDisplayNumber(e.target.value === "" ? 1 : Number(e.target.value))
+            }
             className="w-20 p-1 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
           />
         </label>

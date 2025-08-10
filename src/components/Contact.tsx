@@ -1,142 +1,112 @@
-import { useRef, useState } from "react";
-import emailjs from "@emailjs/browser";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 const Contact = () => {
-  const form = useRef<HTMLFormElement>(null);
-  const [messageSent, setMessageSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [enabled, setEnabled] = useState<boolean>(true);
+  const [displayNumber, setDisplayNumber] = useState<number>(1);
+  const [description, setDescription] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const sendEmail = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const sectionsRef = doc(db, "sections", "contact");
 
-    if (!form.current) return;
-
-    const name = form.current.user_name.value.trim();
-    const email = form.current.user_email.value.trim();
-    const message = form.current.message.value.trim();
-
-    if (!name || !email || !message) {
-      setError("All fields are required.");
-      return;
-    }
-
-    emailjs
-      .sendForm("service_2e9zq4f", "template_mq85xh3", form.current, "VSey23muaE28V71S_")
-      .then(
-        () => {
-          setMessageSent(true);
-          setError(null);
-          form.current?.reset();
-        },
-        () => {
-          setError("Failed to send the message. Please try again later.");
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const sectionsSnap = await getDoc(sectionsRef);
+        if (sectionsSnap.exists()) {
+          const sectionData = sectionsSnap.data();
+          setDisplayNumber(sectionData.displayNumber ?? 1);
+          setEnabled(sectionData.enabled ?? true);
+          setDescription(sectionData.description ?? "");
         }
-      );
+      } catch (err) {
+        console.error("❌ Failed to fetch contact section config:", err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await setDoc(sectionsRef, {
+        enabled,
+        displayNumber,
+        description,
+      });
+      setMessage("✅ Saved successfully!");
+    } catch (err) {
+      console.error("❌ Failed to save contact section config:", err);
+      setMessage("❌ Save failed");
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMessage(""), 3000);
+    }
   };
 
   return (
-    <section id="contact" className="max-w-4xl mx-auto px-6 md:px-12 py-20 md:py-24 text-center">
-      {/* Heading */}
-      <motion.div
-        className="flex items-center justify-center mb-12"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        viewport={{ once: true }}
-      >
-        <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono whitespace-nowrap">
-          <span className="mr-2 font-mono text-[#007acc] dark:text-[#64ffda]">06.</span>
-          What’s Next?
+    <section className="max-w-6xl mx-auto px-6 md:px-12 py-20 md:py-24">
+      {/* Header */}
+      <motion.div className="flex items-center mb-10">
+        <h2 className="text-2xl font-bold text-[#007acc] dark:text-[#64ffda] font-mono">
+          <span className="mr-2">{`0.${displayNumber}`}</span> Contact Section
         </h2>
-        <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#8892b0] relative -top-[5px]" />
+        <div className="h-px ml-5 flex-1 max-w-[300px] bg-[#233554]" />
       </motion.div>
 
-      {/* Description & Button */}
-      <motion.p
-        className="text-lg text-[#111827] dark:text-[#ccd6f6] mb-6 max-w-xl mx-auto"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.6 }}
-        viewport={{ once: true }}
-      >
-        I’m currently looking for full-time frontend opportunities. If you’re interested in working
-        together or just want to connect, feel free to reach out. I’ll respond as soon as I can!
-      </motion.p>
+      {/* Section Settings */}
+      <div className="flex flex-wrap gap-6 mb-10">
+        <label className="flex items-center gap-2 text-sm font-mono text-gray-700 dark:text-gray-300">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+            className="accent-[#64ffda]"
+          />
+          Show this section
+        </label>
 
-      {!showForm && (
-        <motion.button
-          onClick={() => setShowForm(true)}
-          className="px-6 py-2 border border-[#007acc] dark:border-[#64ffda] text-[#007acc] dark:text-[#64ffda] rounded hover:bg-[#007acc]/10 dark:hover:bg-[#64ffda]/10 transition"
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 0.4 }}
-          viewport={{ once: true }}
+        <label className="flex items-center gap-2 text-sm font-mono text-gray-700 dark:text-gray-300">
+          Display Number:
+          <input
+            type="number"
+            min={1}
+            value={displayNumber}
+            onChange={(e) =>
+              setDisplayNumber(
+                e.target.value === "" ? 1 : Number(e.target.value)
+              )
+            }
+            className="w-20 px-2 py-1 rounded bg-gray-100 dark:bg-[#112240] dark:text-white border border-gray-300 dark:border-gray-600"
+          />
+        </label>
+      </div>
+
+      {/* Description Field */}
+      <div className="mb-10">
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={4}
+          placeholder="Enter description..."
+          className="w-full p-4 text-base rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
+        />
+      </div>
+
+      {/* Save Button */}
+      <div className="w-full mt-6 flex flex-col items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-6 py-2 rounded bg-[#64ffda] text-[#0a192f] font-semibold hover:bg-[#52d0c5] transition"
         >
-          Say Hello
-        </motion.button>
-      )}
-
-      {/* Contact Form */}
-      <AnimatePresence>
-        {showForm && (
-          <motion.form
-            ref={form}
-            onSubmit={sendEmail}
-            className="mt-10 bg-white dark:bg-[#0a192f] p-6 rounded-lg shadow-md flex flex-col gap-4 text-left"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <input
-              type="text"
-              name="user_name"
-              placeholder="Your Name"
-              className="p-3 rounded bg-gray-100 dark:bg-gray-800 text-[#111827] dark:text-[#ccd6f6] focus:outline-none focus:ring-2 focus:ring-[#64ffda]"
-            />
-            <input
-              type="email"
-              name="user_email"
-              placeholder="Your Email"
-              className="p-3 rounded bg-gray-100 dark:bg-gray-800 text-[#111827] dark:text-[#ccd6f6] focus:outline-none focus:ring-2 focus:ring-[#64ffda]"
-            />
-            <textarea
-              name="message"
-              rows={4}
-              placeholder="Your Message"
-              className="p-3 rounded bg-gray-100 dark:bg-gray-800 text-[#111827] dark:text-[#ccd6f6] focus:outline-none focus:ring-2 focus:ring-[#64ffda]"
-            />
-            <button
-              type="submit"
-              className="mt-2 px-6 py-2 border border-[#64ffda] text-[#64ffda] rounded hover:bg-[#64ffda]/10 transition"
-            >
-              Send Message
-            </button>
-
-            {/* Feedback */}
-            {messageSent && (
-              <motion.p
-                className="text-green-500 mt-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                ✅ Message sent successfully!
-              </motion.p>
-            )}
-            {error && (
-              <motion.p
-                className="text-red-500 mt-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                ❌ {error}
-              </motion.p>
-            )}
-          </motion.form>
-        )}
-      </AnimatePresence>
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+        {message && <span className="text-sm text-green-400">{message}</span>}
+      </div>
     </section>
   );
 };
