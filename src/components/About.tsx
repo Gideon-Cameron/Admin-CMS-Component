@@ -28,7 +28,7 @@ const About = () => {
           setImageUrl(data.imageUrl || "");
         }
 
-        // Fetch section config
+        
         const sectionsSnap = await getDoc(sectionsRef);
         if (sectionsSnap.exists()) {
           const sectionData = sectionsSnap.data();
