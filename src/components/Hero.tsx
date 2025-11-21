@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import Tooltip from "../components/Tooltip"; 
 
 const Hero = () => {
   const [intro, setIntro] = useState("");
@@ -39,7 +38,7 @@ const Hero = () => {
     };
 
     fetchHero();
-  }, []);
+  }, []); // ← FIX: only run on initial mount
 
   const handleSave = async () => {
     console.log("💾 Saving hero data:", { intro, name, subtitle, description });
@@ -58,76 +57,67 @@ const Hero = () => {
   };
 
   if (loading) {
+    console.log("⏳ Loading state active — rendering loading message...");
     return <p className="text-center text-[#8892b0]">Loading hero content...</p>;
   }
 
   return (
-    <section className="min-h-screen flex flex-col justify-center px-6 md:px-12 max-w-4xl mx-auto space-y-6">
+    <section className="min-h-screen flex flex-col justify-center px-6 md:px-12 max-w-4xl mx-auto space-y-4">
 
       {/* Title */}
       <motion.h1
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-4xl font-bold text-center text-[#0a192f]"
+        className="text-4xl font-bold text-center text-[#ccd6f6]"
       >
         Admin Control Panel
       </motion.h1>
 
-      {/* NAME */}
       <motion.label
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="text-xl font-semibold text-[#0a192f] flex items-center gap-2"
+        className="text-xl font-semibold text-[#ccd6f6]"
       >
         Name
-        <Tooltip text="Displayed as the main headline on the hero section." />
-
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full mt-1 mb-4 p-2 rounded bg-white border border-gray-300"
+          className="w-full mt-1 mb-4 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
         />
       </motion.label>
 
-      {/* SUBTITLE */}
       <motion.label
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="text-lg font-semibold text-[#0a192f] flex items-center gap-2"
+        className="text-lg font-semibold text-[#8892b0]"
       >
         Subtitle
-        <Tooltip text="Appears directly below the name." />
-
         <input
           type="text"
           value={subtitle}
           onChange={(e) => setSubtitle(e.target.value)}
-          className="w-full mt-1 mb-4 p-2 rounded bg-white border border-gray-300"
+          className="w-full mt-1 mb-4 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
         />
       </motion.label>
 
-      {/* DESCRIPTION */}
       <motion.label
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="text-base font-semibold text-[#0a192f] flex items-center gap-2"
+        className="text-base text-[#8892b0]"
       >
         Description
-        <Tooltip text="A longer text block describing you or your services." />
-
         <textarea
           rows={5}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full mt-1 p-2 rounded bg-white border border-gray-300"
+          className="w-full mt-1 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
         />
       </motion.label>
 
-      {/* BUTTON */}
       <div className="mt-4 flex gap-4 items-center">
         <button
           onClick={handleSave}
@@ -136,7 +126,7 @@ const Hero = () => {
         >
           {saving ? "Saving..." : "Save Changes"}
         </button>
-        {message && <span className="text-sm text-green-600">{message}</span>}
+        {message && <span className="text-sm text-green-400">{message}</span>}
       </div>
     </section>
   );
