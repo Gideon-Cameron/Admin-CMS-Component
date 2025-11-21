@@ -2,13 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
-
-/* Simple reusable tooltip */
-const Tooltip = ({ text }: { text: string }) => (
-  <span className="ml-2 text-xs text-gray-600 bg-white border border-gray-300 px-2 py-1 rounded shadow-sm">
-    {text}
-  </span>
-);
+import Tooltip from "../components/Tooltip"; 
 
 const Hero = () => {
   const [intro, setIntro] = useState("");
@@ -64,49 +58,30 @@ const Hero = () => {
   };
 
   if (loading) {
-    console.log("⏳ Loading state active — rendering loading message...");
     return <p className="text-center text-[#8892b0]">Loading hero content...</p>;
   }
 
   return (
-    <section
-      className="min-h-screen flex flex-col justify-center px-6 md:px-12 max-w-4xl mx-auto space-y-4 rounded-lg p-10"
-      style={{ backgroundColor: "#f9f1ef" }} // NEW background
-    >
-      {/* NEW SECTION TITLE */}
-      <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">
-        Admin Control Panel
-      </h2>
+    <section className="min-h-screen flex flex-col justify-center px-6 md:px-12 max-w-4xl mx-auto space-y-6">
 
-      {/* INTRO — still hidden (keeping your original comment intact) */}
-      {/* 
-      <motion.label
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-        className="text-sm font-mono text-[#64ffda]"
+      {/* Title */}
+      <motion.h1
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-4xl font-bold text-center text-[#0a192f]"
       >
-        Intro Text
-        <input
-          type="text"
-          value={intro}
-          onChange={(e) => setIntro(e.target.value)}
-          className="w-full mt-1 mb-4 p-2 rounded bg-gray-100 dark:bg-[#112240] dark:text-white"
-        />
-      </motion.label>
-      */}
+        Admin Control Panel
+      </motion.h1>
 
       {/* NAME */}
       <motion.label
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="text-xl font-semibold text-gray-800 flex flex-col"
+        className="text-xl font-semibold text-[#0a192f] flex items-center gap-2"
       >
-        <span className="flex items-center">
-          Name
-          <Tooltip text="Displayed as the main headline on the hero section." />
-        </span>
+        Name
+        <Tooltip text="Displayed as the main headline on the hero section." />
 
         <input
           type="text"
@@ -121,12 +96,10 @@ const Hero = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="text-lg font-semibold text-gray-700 flex flex-col"
+        className="text-lg font-semibold text-[#0a192f] flex items-center gap-2"
       >
-        <span className="flex items-center">
-          Subtitle
-          <Tooltip text="Appears directly below the name." />
-        </span>
+        Subtitle
+        <Tooltip text="Appears directly below the name." />
 
         <input
           type="text"
@@ -141,12 +114,10 @@ const Hero = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="text-base text-gray-700 flex flex-col"
+        className="text-base font-semibold text-[#0a192f] flex items-center gap-2"
       >
-        <span className="flex items-center">
-          Description
-          <Tooltip text="A longer text block describing you or your services." />
-        </span>
+        Description
+        <Tooltip text="A longer text block describing you or your services." />
 
         <textarea
           rows={5}
@@ -156,7 +127,7 @@ const Hero = () => {
         />
       </motion.label>
 
-      {/* SAVE BUTTON */}
+      {/* BUTTON */}
       <div className="mt-4 flex gap-4 items-center">
         <button
           onClick={handleSave}
